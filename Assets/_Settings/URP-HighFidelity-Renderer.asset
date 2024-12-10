@@ -53,9 +53,9 @@ MonoBehaviour:
     hdrDebugViewPS: {fileID: 4800000, guid: 573620ae32aec764abd4d728906d2587, type: 3}
   m_RendererFeatures:
   - {fileID: -1878332245247344467}
-  - {fileID: 6792758804040773406}
   - {fileID: 8317073944722652636}
-  m_RendererFeatureMap: adc0de57c6d2eee51eefc18724ba445edcbdd9ddaf2e6c73
+  - {fileID: 6792758804040773406}
+  m_RendererFeatureMap: adc0de57c6d2eee5dcbdd9ddaf2e6c731eefc18724ba445e
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -110,12 +110,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d613f08f173d4dd895bb07b3230baa9, type: 3}
   m_Name: PixeliteFullscreen
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   injectionPoint: 600
   fetchColorBuffer: 1
   requirements: -1
-  passMaterial: {fileID: -876546973899608171, guid: 5b56168e5addcf4418227bdd9ce89c77,
-    type: 3}
+  passMaterial: {fileID: 2100000, guid: edf53392e7086e242ae423047fd6e920, type: 2}
   passIndex: 0
   bindDepthStencilAttachment: 0
   m_Version: 1
