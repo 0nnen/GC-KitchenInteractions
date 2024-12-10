@@ -316,7 +316,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: -876546973899608171, guid: 569d662aff5c6df449764ce74f7207da, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -495,7 +495,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.35
+  near clip plane: 0.01
   far clip plane: 5000
   field of view: 60.000004
   orthographic: 0
@@ -524,7 +524,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.54, y: 1.96, z: -1.0400001}
+  m_LocalPosition: {x: -1.22, y: 1.22, z: -6.01}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -842,7 +842,6 @@ GameObject:
   - component: {fileID: 555351983}
   - component: {fileID: 555351986}
   - component: {fileID: 555351987}
-  - component: {fileID: 555351988}
   m_Layer: 0
   m_Name: cm
   m_TagString: Untagged
@@ -890,18 +889,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Damping: 0
---- !u!114 &555351988
-MonoBehaviour:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 555351982}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1e8b78ac948f05a46a6d8339a503172b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &783706778
 GameObject:
   m_ObjectHideFlags: 0
@@ -976,6 +963,7 @@ MonoBehaviour:
   m_DeselectOnBackgroundClick: 1
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
 --- !u!114 &783706781
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1500,7 +1488,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1550770873
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1690,7 +1678,7 @@ MonoBehaviour:
   gravity: -9.81
   jumpHeight: 1.5
   mouseSensitivity: 10
-  lateralSensitivity: 5
+  lateralSensitivity: 2.5
   tiltAmount: 5
   tiltDamping: 5
   cameraTransform: {fileID: 2144770469}
@@ -1927,17 +1915,17 @@ PrefabInstance:
     - target: {fileID: 2939692028771380676, guid: 766b7c5fd682eb94ab380813e1d8a591,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.54
+      value: -1.22
       objectReference: {fileID: 0}
     - target: {fileID: 2939692028771380676, guid: 766b7c5fd682eb94ab380813e1d8a591,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.47
+      value: 0.72
       objectReference: {fileID: 0}
     - target: {fileID: 2939692028771380676, guid: 766b7c5fd682eb94ab380813e1d8a591,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.04
+      value: -6.21
       objectReference: {fileID: 0}
     - target: {fileID: 2939692028771380676, guid: 766b7c5fd682eb94ab380813e1d8a591,
         type: 3}
@@ -2000,6 +1988,7 @@ GameObject:
   - component: {fileID: 2144770469}
   - component: {fileID: 2144770470}
   - component: {fileID: 2144770471}
+  - component: {fileID: 2144770472}
   m_Layer: 0
   m_Name: Virtual Camera
   m_TagString: Untagged
@@ -2046,7 +2035,7 @@ MonoBehaviour:
   m_Lens:
     FieldOfView: 60.000004
     OrthographicSize: 10
-    NearClipPlane: 0.35
+    NearClipPlane: 0.01
     FarClipPlane: 5000
     Dutch: 0
     ModeOverride: 0
@@ -2074,9 +2063,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44d70cc20219cd84593f67d248eafe36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Offset: {x: 0, y: 0.49, z: 0}
+  m_Offset: {x: 0, y: 0.5, z: 0.2}
   m_ApplyAfter: 1
   m_PreserveComposition: 0
+--- !u!114 &2144770472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2144770468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 729aad4491e915a41bda2b8325cf757a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
