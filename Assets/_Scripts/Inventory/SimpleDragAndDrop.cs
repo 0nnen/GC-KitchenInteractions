@@ -7,10 +7,12 @@ public class SimpleDragAndDrop : MonoBehaviour
     [Header("Références")]
     [SerializeField] private Camera mainCamera; // Caméra utilisée pour le Raycast
     [SerializeField] private Transform holdingParent; // Parent temporaire pendant le drag
+    [SerializeField] private Transform playerTransform; // Référence au joueur
 
     [Header("Réglages")]
     [SerializeField] private LayerMask interactableLayer; // Layer des objets interactifs
     [SerializeField] private float dragDepth = 1f; // Distance de l'objet devant la caméra
+    [SerializeField] private float interactionRange = 3f; // Distance maximale pour interagir
 
     private bool isDragging = false; // Indique si l'objet est en train d'être déplacé
 
@@ -30,18 +32,31 @@ public class SimpleDragAndDrop : MonoBehaviour
                 Debug.LogError("Aucune caméra active trouvée ! Assignez une caméra au champ 'MainCamera' dans l'inspecteur.");
             }
         }
+
+        // Vérifier si le joueur est assigné
+        if (playerTransform == null)
+        {
+            Debug.LogError("Le champ 'PlayerTransform' n'est pas assigné !");
+        }
     }
 
     private void OnMouseDown()
     {
-        if (mainCamera == null)
+        if (mainCamera == null || playerTransform == null)
         {
-            Debug.LogError("MainCamera n'est pas assignée !");
+            Debug.LogError("MainCamera ou PlayerTransform non assignés !");
             return;
         }
 
         // Ignorer le clic si la souris est au-dessus d'une UI
         if (EventSystem.current.IsPointerOverGameObject()) return;
+
+        // Vérifier la portée avant de lancer le Raycast
+        if (Vector3.Distance(playerTransform.position, transform.position) > interactionRange)
+        {
+            Debug.Log("Objet hors de portée !");
+            return; // Objet trop loin
+        }
 
         // Lancer un Raycast pour détecter un objet interactif
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
