@@ -32,7 +32,7 @@ public class PlayerController : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         inputActions = new InputSystem_Actions();
 
-        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.lockState = CursorLockMode.Confined;
     }
 
     private void OnEnable()
