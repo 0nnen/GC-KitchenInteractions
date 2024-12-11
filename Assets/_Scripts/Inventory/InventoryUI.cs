@@ -6,8 +6,9 @@ public class InventoryUI : MonoBehaviour
     public static InventoryUI Instance;
 
     [Header("Inventaire UI")]
-    [SerializeField] private Transform inventoryGrid; // Parent pour les slots dans le Canvas
-    [SerializeField] private GameObject inventorySlotPrefab; // Prefab de slot d'inventaire
+    [SerializeField] private Transform inventoryGrid; // Parent des slots
+    [SerializeField] private GameObject inventorySlotPrefab; // Prefab d'un slot
+    private int maxInventorySize = 12; // Taille maximale de l'inventaire
 
     void Awake()
     {
@@ -17,25 +18,41 @@ public class InventoryUI : MonoBehaviour
             Destroy(gameObject);
     }
 
-    // Ajouter un objet à l'inventaire
     public void AddToInventory(GameObject item)
     {
-        // Crée un slot d'inventaire
+        // Vérifiez que l'inventaire a de la place
+        if (inventoryGrid.childCount >= maxInventorySize)
+        {
+            Debug.LogWarning("Inventaire plein !");
+            return;
+        }
+
+        // Ajouter l'objet à l'UI
         GameObject slot = Instantiate(inventorySlotPrefab, inventoryGrid);
 
-        // Placer l'objet dans le slot
+        // Déplacer l'objet sous le slot
         item.transform.SetParent(slot.transform);
         item.transform.localPosition = Vector3.zero;
         item.transform.localScale = Vector3.one;
 
-        // Désactiver les composants inutiles pour un objet dans l'inventaire
-        if (item.TryGetComponent<Rigidbody>(out Rigidbody rb))
+        // Ajoutez un bouton pour retirer l'objet
+        Button button = slot.GetComponentInChildren<Button>();
+        if (button != null)
         {
-            Destroy(rb);
+            button.onClick.AddListener(() => RemoveFromInventory(item, slot));
         }
-        if (item.TryGetComponent<Collider>(out Collider collider))
-        {
-            Destroy(collider);
-        }
+
+        // Désactiver l'objet dans la scène
+        item.SetActive(false);
+
+        Debug.Log($"{item.name} ajouté à l'inventaire.");
+    }
+
+    private void RemoveFromInventory(GameObject item, GameObject slot)
+    {
+        Inventory.Instance.RemoveFromInventory(item);
+
+        // Détruire le slot après retrait
+        Destroy(slot);
     }
 }

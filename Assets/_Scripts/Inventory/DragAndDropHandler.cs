@@ -1,109 +1,180 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Cinemachine;
 
 public class DragAndDropHandler : MonoBehaviour
 {
+    [Header("Références")]
+    [SerializeField] private Camera mainCamera; // Caméra utilisée pour le Raycast
+    [SerializeField] private Transform holdingParent; // Parent temporaire pendant le drag
+    [SerializeField] private Transform releasedParent; // Parent où les objets sont placés une fois relâchés
+    [SerializeField] private Transform playerTransform; // Référence au joueur
+
     [Header("Réglages")]
     [SerializeField] private LayerMask interactableLayer; // Layer des objets interactifs
-    [SerializeField] private Transform holdingParent;    // Parent temporaire pendant le drag
+    [SerializeField] private float interactionRange = 3f; // Distance maximale pour interagir
+    [SerializeField] private float dragDepth = 1f; // Distance des objets devant la caméra pendant le drag
+    [SerializeField] private float rotationSpeed = 5f; // Vitesse de rotation lors du clic droit
 
-    private Camera mainCamera;
     private GameObject selectedObject; // Objet actuellement manipulé
-    private bool isDragging; // Indique si l'utilisateur drag un objet
-    private InputSystem_Actions inputActions; // Classe générée automatiquement
+    private bool isDragging = false; // Indique si un objet est en cours de drag-and-drop
 
     private void Awake()
     {
-        mainCamera = Camera.main;
-        inputActions = new InputSystem_Actions(); // Initialise la classe d'entrée
-    }
+        // Initialiser la caméra principale via Cinemachine
+        if (mainCamera == null)
+        {
+            var cinemachineBrain = FindObjectOfType<CinemachineBrain>();
+            if (cinemachineBrain != null && cinemachineBrain.OutputCamera != null)
+            {
+                mainCamera = cinemachineBrain.OutputCamera;
+                Debug.Log("Caméra assignée automatiquement via CinemachineBrain.");
+            }
+            else
+            {
+                Debug.LogError("Aucune caméra active trouvée ! Assignez une caméra au champ 'MainCamera' dans l'inspecteur.");
+            }
+        }
 
-    private void OnEnable()
-    {
-        inputActions.UI.Enable(); // Active l'Action Map "UI"
-
-        // Abonne l'action "Click" aux méthodes de début et fin du drag
-        inputActions.UI.Click.started += StartDragging;
-        inputActions.UI.Click.canceled += StopDragging;
-    }
-
-    private void OnDisable()
-    {
-        // Désabonne les événements pour éviter les erreurs
-        inputActions.UI.Click.started -= StartDragging;
-        inputActions.UI.Click.canceled -= StopDragging;
-
-        inputActions.UI.Disable(); // Désactive l'Action Map "UI"
+        if (playerTransform == null)
+        {
+            Debug.LogError("Le champ 'PlayerTransform' n'est pas assigné !");
+        }
     }
 
     private void Update()
     {
+        // Détecter le clic gauche pour commencer le drag
+        if (Input.GetMouseButtonDown(0) && !isDragging)
+        {
+            TryStartDragging();
+        }
+
+        // Déplacer ou faire tourner l'objet si nécessaire
         if (isDragging && selectedObject != null)
         {
-            MoveObjectWithMouse();
-        }
-    }
-
-    private void StartDragging(UnityEngine.InputSystem.InputAction.CallbackContext context)
-    {
-        // Lancer un raycast pour détecter un objet interactif
-        Ray ray = mainCamera.ScreenPointToRay(UnityEngine.InputSystem.Mouse.current.position.ReadValue());
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, interactableLayer))
-        {
-            if (hit.collider.TryGetComponent<Interactable>(out Interactable interactable))
+            if (Input.GetMouseButton(1)) // Rotation avec clic droit
             {
-                selectedObject = hit.collider.gameObject;
-                isDragging = true;
+                RotateObject();
+            }
+            else // Déplacement avec clic gauche
+            {
+                DragObject();
+            }
 
-                // Désactiver la physique pour permettre un déplacement fluide
-                if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
-                {
-                    rb.isKinematic = true;
-                }
-
-                // Associer l'objet au holdingParent
-                selectedObject.transform.SetParent(holdingParent);
-                Debug.Log($"Début du drag de l'objet : {selectedObject.name}");
+            // Relâcher l'objet si le bouton gauche est relâché
+            if (Input.GetMouseButtonUp(0))
+            {
+                StopDragging();
             }
         }
     }
 
-    private void StopDragging(UnityEngine.InputSystem.InputAction.CallbackContext context)
+    private void TryStartDragging()
     {
-        if (selectedObject != null)
+        if (mainCamera == null || playerTransform == null)
         {
-            // Vérifie si l'objet est relâché sur une UI
-            if (EventSystem.current.IsPointerOverGameObject())
+            Debug.LogError("MainCamera ou PlayerTransform non assignés !");
+            return;
+        }
+
+        // Ignorer les clics sur une UI
+        if (EventSystem.current.IsPointerOverGameObject()) return;
+
+        // Lancer un Raycast pour détecter un objet interactif
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, interactableLayer))
+        {
+            // Vérifier si l'objet est interactif et à portée
+            if (hit.collider.TryGetComponent<Interactable>(out Interactable interactable))
             {
-                Debug.Log("Objet relâché dans une UI !");
-                InventoryUI.Instance.AddToInventory(selectedObject);
+                float distanceToPlayer = Vector3.Distance(playerTransform.position, hit.collider.transform.position);
+                if (distanceToPlayer <= interactionRange)
+                {
+                    StartDragging(hit.collider.gameObject);
+                }
+                else
+                {
+                    Debug.Log("Objet hors de portée !");
+                }
+            }
+        }
+    }
+
+    private void StartDragging(GameObject obj)
+    {
+        selectedObject = obj;
+        isDragging = true;
+
+        // Désactiver la physique pour permettre un déplacement fluide
+        if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
+        {
+            rb.isKinematic = true;
+        }
+
+        // Déplacer l'objet sous le parent temporaire
+        if (holdingParent != null)
+        {
+            selectedObject.transform.SetParent(holdingParent);
+        }
+
+        Debug.Log($"Début du drag de : {selectedObject.name}");
+    }
+
+    private void DragObject()
+    {
+        // Convertir la position de la souris en coordonnées du monde
+        Vector3 mousePosition = Input.mousePosition;
+        mousePosition.z = dragDepth; // Distance devant la caméra
+        Vector3 worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
+
+        // Déplacer l'objet vers la position de la souris
+        selectedObject.transform.position = Vector3.Lerp(selectedObject.transform.position, worldPosition, 0.2f);
+    }
+
+    private void RotateObject()
+    {
+        // Récupérer le mouvement de la souris
+        float mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
+        float mouseY = Input.GetAxis("Mouse Y") * rotationSpeed;
+
+        // Appliquer une rotation autour des axes X et Y
+        selectedObject.transform.Rotate(mainCamera.transform.up, -mouseX, Space.World); // Rotation horizontale
+        selectedObject.transform.Rotate(mainCamera.transform.right, mouseY, Space.World); // Rotation verticale
+    }
+
+    private void StopDragging()
+    {
+        if (selectedObject == null) return;
+
+        isDragging = false;
+
+        // Réactiver la physique si nécessaire
+        if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
+        {
+            rb.isKinematic = false;
+        }
+
+        // Vérifier si l'objet est relâché sur une UI
+        if (EventSystem.current.IsPointerOverGameObject())
+        {
+            Debug.Log("Objet relâché sur une UI !");
+            Inventory.Instance.AddToInventory(selectedObject);
+        }
+        else
+        {
+            // Déplacer l'objet sous le Released Parent
+            if (releasedParent != null)
+            {
+                selectedObject.transform.SetParent(releasedParent);
             }
             else
             {
-                // Réactiver la physique si l'objet reste dans la scène
-                if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
-                {
-                    rb.isKinematic = false;
-                }
-
-                // Réinitialiser l'objet
                 selectedObject.transform.SetParent(null);
-                Debug.Log($"Fin du drag de l'objet : {selectedObject.name}");
             }
-
-            selectedObject = null;
-            isDragging = false;
+            Debug.Log($"Objet relâché dans Released Parent : {selectedObject.name}");
         }
-    }
 
-    private void MoveObjectWithMouse()
-    {
-        // Convertir la position de la souris en coordonnées du monde
-        Vector3 mousePosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
-        mousePosition.z = 1f; // Distance arbitraire pour placer l'objet devant la caméra
-        Vector3 worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
-
-        // Déplacer l'objet de manière fluide
-        selectedObject.transform.position = Vector3.Lerp(selectedObject.transform.position, worldPosition, 0.2f);
+        selectedObject = null;
     }
 }

@@ -11,8 +11,8 @@ public class SimpleDragAndDrop : MonoBehaviour
 
     [Header("Réglages")]
     [SerializeField] private LayerMask interactableLayer; // Layer des objets interactifs
-    [SerializeField] private float dragDepth = 1f; // Distance de l'objet devant la caméra
     [SerializeField] private float interactionRange = 3f; // Distance maximale pour interagir
+    [SerializeField] private float dragDepth = 1f; // Distance de l'objet devant la caméra
 
     private bool isDragging = false; // Indique si l'objet est en train d'être déplacé
 
