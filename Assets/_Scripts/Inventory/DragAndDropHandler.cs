@@ -5,34 +5,29 @@ using Cinemachine;
 public class DragAndDropHandler : MonoBehaviour
 {
     [Header("Références")]
-    [SerializeField] private Camera mainCamera; // Caméra utilisée pour le Raycast
-    [SerializeField] private Transform holdingParent; // Parent temporaire pendant le drag
-    [SerializeField] private Transform releasedParent; // Parent où les objets sont placés une fois relâchés
-    [SerializeField] private Transform playerTransform; // Référence au joueur
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private Transform holdingParent;
+    [SerializeField] private Transform releasedParent;
+    [SerializeField] private Transform playerTransform;
 
     [Header("Réglages")]
-    [SerializeField] private LayerMask interactableLayer; // Layer des objets interactifs
-    [SerializeField] private float interactionRange = 3f; // Distance maximale pour interagir
-    [SerializeField] private float dragDepth = 1f; // Distance des objets devant la caméra pendant le drag
-    [SerializeField] private float rotationSpeed = 5f; // Vitesse de rotation lors du clic droit
+    [SerializeField] private LayerMask interactableLayer;
+    [SerializeField] private float interactionRange = 3f;
+    [SerializeField] private float dragDepth = 1f;
+    [SerializeField] private float rotationSpeed = 5f;
+    [SerializeField] private float minHeight = 0.5f; // Hauteur minimale pour empêcher les objets de passer sous le sol
 
-    private GameObject selectedObject; // Objet actuellement manipulé
-    private bool isDragging = false; // Indique si un objet est en cours de drag-and-drop
+    private GameObject selectedObject;
+    private bool isDragging = false;
 
     private void Awake()
     {
-        // Initialiser la caméra principale via Cinemachine
         if (mainCamera == null)
         {
             var cinemachineBrain = FindObjectOfType<CinemachineBrain>();
             if (cinemachineBrain != null && cinemachineBrain.OutputCamera != null)
             {
                 mainCamera = cinemachineBrain.OutputCamera;
-                Debug.Log("Caméra assignée automatiquement via CinemachineBrain.");
-            }
-            else
-            {
-                Debug.LogError("Aucune caméra active trouvée ! Assignez une caméra au champ 'MainCamera' dans l'inspecteur.");
             }
         }
 
@@ -44,25 +39,22 @@ public class DragAndDropHandler : MonoBehaviour
 
     private void Update()
     {
-        // Détecter le clic gauche pour commencer le drag
         if (Input.GetMouseButtonDown(0) && !isDragging)
         {
             TryStartDragging();
         }
 
-        // Déplacer ou faire tourner l'objet si nécessaire
         if (isDragging && selectedObject != null)
         {
-            if (Input.GetMouseButton(1)) // Rotation avec clic droit
+            if (Input.GetMouseButton(1))
             {
                 RotateObject();
             }
-            else // Déplacement avec clic gauche
+            else
             {
                 DragObject();
             }
 
-            // Relâcher l'objet si le bouton gauche est relâché
             if (Input.GetMouseButtonUp(0))
             {
                 StopDragging();
@@ -78,14 +70,11 @@ public class DragAndDropHandler : MonoBehaviour
             return;
         }
 
-        // Ignorer les clics sur une UI
         if (EventSystem.current.IsPointerOverGameObject()) return;
 
-        // Lancer un Raycast pour détecter un objet interactif
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, interactableLayer))
         {
-            // Vérifier si l'objet est interactif et à portée
             if (hit.collider.TryGetComponent<Interactable>(out Interactable interactable))
             {
                 float distanceToPlayer = Vector3.Distance(playerTransform.position, hit.collider.transform.position);
@@ -106,41 +95,42 @@ public class DragAndDropHandler : MonoBehaviour
         selectedObject = obj;
         isDragging = true;
 
-        // Désactiver la physique pour permettre un déplacement fluide
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
         {
             rb.isKinematic = true;
+
+            // Désactiver temporairement les collisions avec le joueur
+            Physics.IgnoreCollision(selectedObject.GetComponent<Collider>(), playerTransform.GetComponent<Collider>(), true);
         }
 
-        // Déplacer l'objet sous le parent temporaire
         if (holdingParent != null)
         {
             selectedObject.transform.SetParent(holdingParent);
         }
-
-        Debug.Log($"Début du drag de : {selectedObject.name}");
     }
 
     private void DragObject()
     {
-        // Convertir la position de la souris en coordonnées du monde
         Vector3 mousePosition = Input.mousePosition;
-        mousePosition.z = dragDepth; // Distance devant la caméra
+        mousePosition.z = dragDepth;
         Vector3 worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
 
-        // Déplacer l'objet vers la position de la souris
+        // Empêcher l'objet de descendre sous la hauteur minimale
+        if (worldPosition.y < minHeight)
+        {
+            worldPosition.y = minHeight;
+        }
+
         selectedObject.transform.position = Vector3.Lerp(selectedObject.transform.position, worldPosition, 0.2f);
     }
 
     private void RotateObject()
     {
-        // Récupérer le mouvement de la souris
         float mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
         float mouseY = Input.GetAxis("Mouse Y") * rotationSpeed;
 
-        // Appliquer une rotation autour des axes X et Y
-        selectedObject.transform.Rotate(mainCamera.transform.up, -mouseX, Space.World); // Rotation horizontale
-        selectedObject.transform.Rotate(mainCamera.transform.right, mouseY, Space.World); // Rotation verticale
+        selectedObject.transform.Rotate(mainCamera.transform.up, -mouseX, Space.World);
+        selectedObject.transform.Rotate(mainCamera.transform.right, mouseY, Space.World);
     }
 
     private void StopDragging()
@@ -149,21 +139,20 @@ public class DragAndDropHandler : MonoBehaviour
 
         isDragging = false;
 
-        // Réactiver la physique si nécessaire
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
         {
             rb.isKinematic = false;
+
+            // Réactiver les collisions avec le joueur
+            Physics.IgnoreCollision(selectedObject.GetComponent<Collider>(), playerTransform.GetComponent<Collider>(), false);
         }
 
-        // Vérifier si l'objet est relâché sur une UI
         if (EventSystem.current.IsPointerOverGameObject())
         {
-            Debug.Log("Objet relâché sur une UI !");
             Inventory.Instance.AddToInventory(selectedObject);
         }
         else
         {
-            // Déplacer l'objet sous le Released Parent
             if (releasedParent != null)
             {
                 selectedObject.transform.SetParent(releasedParent);
@@ -172,7 +161,6 @@ public class DragAndDropHandler : MonoBehaviour
             {
                 selectedObject.transform.SetParent(null);
             }
-            Debug.Log($"Objet relâché dans Released Parent : {selectedObject.name}");
         }
 
         selectedObject = null;
