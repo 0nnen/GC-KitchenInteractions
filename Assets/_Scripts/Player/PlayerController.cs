@@ -50,7 +50,7 @@ public class PlayerController : MonoBehaviour
         isGrounded = CheckGrounded();
         HandleMovement();
         ApplyGravity();
-        //RotatePlayerWithMouse();
+        // RotatePlayerWithMouse();
         UpdateAnimator();
         ApplyDynamicTilt();
     }
@@ -106,7 +106,11 @@ public class PlayerController : MonoBehaviour
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
 
-        velocity.y += gravity * Time.deltaTime;
+        if (!isGrounded)
+        {
+            velocity.y += gravity * Time.deltaTime; // Appliquer la gravité si le joueur n'est pas au sol
+        }
+
         characterController.Move(velocity * Time.deltaTime);
     }
 

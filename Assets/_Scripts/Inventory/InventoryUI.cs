@@ -94,6 +94,9 @@ public class InventoryUI : MonoBehaviour
             // Positionner l'objet devant la caméra
             item.transform.position = Camera.main.transform.position + Camera.main.transform.forward * 2f;
 
+            // Détruire le slot de l'inventaire
+            Destroy(slot);
+
             Debug.Log($"Objet relâché dans la scène : {item.name}");
         }
         else

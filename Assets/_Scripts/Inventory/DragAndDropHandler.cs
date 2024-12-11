@@ -18,6 +18,7 @@ public class DragAndDropHandler : MonoBehaviour
     [SerializeField] private float minHeight = 0.5f; // Hauteur minimale pour empêcher les objets de passer sous le sol
 
     private GameObject selectedObject;
+    private Vector3 originalScale; // Sauvegarder la taille d'origine
     private bool isDragging = false;
 
     private void Awake()
@@ -95,12 +96,19 @@ public class DragAndDropHandler : MonoBehaviour
         selectedObject = obj;
         isDragging = true;
 
+        // Restaurer la taille d'origine
+        originalScale = selectedObject.transform.localScale;
+        selectedObject.transform.localScale = originalScale;
+
+        // Réactiver l'objet
+        selectedObject.SetActive(true);
+
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
         {
             rb.isKinematic = true;
 
             // Désactiver temporairement les collisions avec le joueur
-            Physics.IgnoreCollision(selectedObject.GetComponent<Collider>(), playerTransform.GetComponent<Collider>(), true);
+            //Physics.IgnoreCollision(selectedObject.GetComponent<Collider>(), playerTransform.GetComponent<Collider>(), true);
         }
 
         if (holdingParent != null)
@@ -112,7 +120,7 @@ public class DragAndDropHandler : MonoBehaviour
     private void DragObject()
     {
         Vector3 mousePosition = Input.mousePosition;
-        mousePosition.z = dragDepth;
+        mousePosition.z = dragDepth; // Positionner à la profondeur spécifiée
         Vector3 worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
 
         // Empêcher l'objet de descendre sous la hauteur minimale
@@ -161,6 +169,11 @@ public class DragAndDropHandler : MonoBehaviour
             {
                 selectedObject.transform.SetParent(null);
             }
+
+            // Positionner à la profondeur définie
+            Vector3 dropPosition = mainCamera.transform.position + mainCamera.transform.forward * dragDepth;
+            dropPosition.y = Mathf.Max(minHeight, dropPosition.y); // Empêcher de passer sous le sol
+            selectedObject.transform.position = dropPosition;
         }
 
         selectedObject = null;
