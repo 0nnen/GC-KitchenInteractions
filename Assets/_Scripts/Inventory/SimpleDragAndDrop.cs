@@ -4,40 +4,49 @@ using Cinemachine;
 
 public class SimpleDragAndDrop : MonoBehaviour
 {
+    [Header("Références")]
+    [SerializeField] private Camera mainCamera; // Caméra utilisée pour le Raycast
+    [SerializeField] private Transform holdingParent; // Parent temporaire pendant le drag
+
     [Header("Réglages")]
     [SerializeField] private LayerMask interactableLayer; // Layer des objets interactifs
-    [SerializeField] private Transform holdingParent;    // Parent temporaire pendant le drag
-    [SerializeField] private float dragDepth = 1f;       // Distance de l'objet devant la caméra
+    [SerializeField] private float dragDepth = 1f; // Distance de l'objet devant la caméra
 
-    private Camera mainCamera;
-    private bool isDragging = false;
+    private bool isDragging = false; // Indique si l'objet est en train d'être déplacé
 
     private void Awake()
     {
-        // Cherche automatiquement la caméra active contrôlée par Cinemachine
+        // Si la caméra principale n'est pas assignée, tente de trouver celle contrôlée par Cinemachine
         if (mainCamera == null)
         {
             var cinemachineBrain = FindObjectOfType<CinemachineBrain>();
             if (cinemachineBrain != null && cinemachineBrain.OutputCamera != null)
             {
                 mainCamera = cinemachineBrain.OutputCamera;
+                Debug.Log("Caméra assignée automatiquement via CinemachineBrain.");
             }
             else
             {
-                Debug.LogError("Aucune caméra Cinemachine active trouvée !");
+                Debug.LogError("Aucune caméra active trouvée ! Assignez une caméra au champ 'MainCamera' dans l'inspecteur.");
             }
         }
     }
 
     private void OnMouseDown()
     {
-        // Vérifie si le clic est sur un objet interactif
-        if (EventSystem.current.IsPointerOverGameObject()) return; // Éviter les clics sur les UI
+        if (mainCamera == null)
+        {
+            Debug.LogError("MainCamera n'est pas assignée !");
+            return;
+        }
 
+        // Ignorer le clic si la souris est au-dessus d'une UI
+        if (EventSystem.current.IsPointerOverGameObject()) return;
+
+        // Lancer un Raycast pour détecter un objet interactif
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, interactableLayer))
         {
-            // Vérifie si l'objet a un Collider et est interactif
             if (hit.collider.gameObject == gameObject)
             {
                 StartDragging();
@@ -65,13 +74,13 @@ public class SimpleDragAndDrop : MonoBehaviour
     {
         isDragging = true;
 
-        // Désactiver la physique pour permettre le déplacement
+        // Désactiver la physique pour permettre le déplacement fluide
         if (TryGetComponent<Rigidbody>(out Rigidbody rb))
         {
             rb.isKinematic = true;
         }
 
-        // Déplacer l'objet sous le parent temporaire
+        // Placer l'objet sous le parent temporaire
         if (holdingParent != null)
         {
             transform.SetParent(holdingParent);
@@ -80,35 +89,37 @@ public class SimpleDragAndDrop : MonoBehaviour
 
     private void DragObject()
     {
-        // Récupère la position de la souris
-        Vector3 mousePosition = Input.mousePosition;
-        mousePosition.z = dragDepth; // Distance devant la caméra
-
         // Convertir la position de la souris en coordonnées du monde
+        Vector3 mousePosition = Input.mousePosition;
+        mousePosition.z = dragDepth; // Distance de l'objet devant la caméra
         Vector3 worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
 
-        // Déplacer l'objet
-        transform.position = Vector3.Lerp(transform.position, worldPosition, 0.2f); // Déplacement fluide
+        // Déplacer l'objet vers la position de la souris
+        transform.position = Vector3.Lerp(transform.position, worldPosition, 0.2f); // Mouvement fluide
     }
 
     private void StopDragging()
     {
         isDragging = false;
 
-        // Réactiver la physique si nécessaire
+        // Réactiver la physique
         if (TryGetComponent<Rigidbody>(out Rigidbody rb))
         {
             rb.isKinematic = false;
         }
 
-        // Supprimer le parent temporaire
+        // Réinitialiser le parent de l'objet
         transform.SetParent(null);
 
-        // Vérifie si l'objet est relâché sur une zone d'inventaire
+        // Vérifier si l'objet est relâché sur une UI
         if (EventSystem.current.IsPointerOverGameObject())
         {
-            Debug.Log("Objet ajouté à l'inventaire");
-            InventoryUI.Instance.AddToInventory(gameObject);
+            Debug.Log("Objet relâché sur une zone UI !");
+            InventoryUI.Instance.AddToInventory(gameObject); // Ajoute l'objet à l'inventaire
+        }
+        else
+        {
+            Debug.Log("Objet relâché dans la scène !");
         }
     }
 }
