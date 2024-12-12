@@ -1,4 +1,4 @@
-using Cinemachine;
+/*using Cinemachine;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -139,4 +139,4 @@ public class SimpleDragAndDrop : MonoBehaviour
             Debug.Log("Objet relâché dans la scène !");
         }
     }
-}
+}*/

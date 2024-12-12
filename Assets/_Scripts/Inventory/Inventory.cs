@@ -23,7 +23,7 @@ public class Inventory : MonoBehaviour
     public void AddToInventory(GameObject item)
     {
         items.Add(item);
-        InventoryUI.Instance.AddToInventory(item);
+        InventoryManager.Instance.AddToInventory(item);
         item.SetActive(false);
     }
 

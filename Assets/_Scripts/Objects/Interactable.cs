@@ -3,30 +3,52 @@ using UnityEngine;
 public class Interactable : MonoBehaviour
 {
     [Header("Surlignage")]
-    [SerializeField] private HighlightEffect highlightEffect; // Effet visuel (facultatif)
+    [SerializeField] private Material outlineMaterial;
+    private Renderer objectRenderer;
+    private Material[] originalMaterials;
 
-    /// <summary>
-    /// Appelée lorsque l'objet est ciblé.
-    /// </summary>
+    private void Awake()
+    {
+        objectRenderer = GetComponent<Renderer>();
+        if (objectRenderer != null)
+        {
+            originalMaterials = objectRenderer.materials;
+        }
+    }
+
     public void OnFocused()
     {
-        if (highlightEffect != null) highlightEffect.EnableHighlight(true);
+        EnableHighlight(true);
     }
 
-    /// <summary>
-    /// Appelée lorsque l'objet n'est plus ciblé.
-    /// </summary>
     public void OnFocusLost()
     {
-        if (highlightEffect != null) highlightEffect.EnableHighlight(false);
+        EnableHighlight(false);
     }
 
-    /// <summary>
-    /// Appelée lorsque le joueur interagit avec l'objet.
-    /// </summary>
+    private void EnableHighlight(bool enable)
+    {
+        if (objectRenderer == null || outlineMaterial == null) return;
+
+        if (enable)
+        {
+            Material[] newMaterials = new Material[originalMaterials.Length + 1];
+            for (int i = 0; i < originalMaterials.Length; i++)
+            {
+                newMaterials[i] = originalMaterials[i];
+            }
+            newMaterials[newMaterials.Length - 1] = outlineMaterial;
+            objectRenderer.materials = newMaterials;
+        }
+        else
+        {
+            objectRenderer.materials = originalMaterials;
+        }
+    }
+
     public void Interact()
     {
         Debug.Log($"{gameObject.name} ramassé !");
-        Inventory.Instance.AddToInventory(gameObject);
+        InventoryManager.Instance.AddToInventory(gameObject);
     }
 }
