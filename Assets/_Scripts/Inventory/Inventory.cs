@@ -7,7 +7,7 @@ public class Inventory : MonoBehaviour
 
     private List<GameObject> items = new List<GameObject>(); // Liste logique des objets dans l'inventaire
 
-    void Awake()
+    private void Awake()
     {
         // Configuration du Singleton
         if (Instance == null)

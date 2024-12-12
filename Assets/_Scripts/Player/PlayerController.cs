@@ -1,23 +1,25 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Paramètres de mouvement")]
     [SerializeField] private float walkSpeed = 2f;
+
     [SerializeField] private float runSpeed = 4f;
     [SerializeField] private float gravity = -9.81f;
     [SerializeField] private float jumpHeight = 1.5f;
 
     [Header("Paramètres de rotation")]
     [SerializeField] private float mouseSensitivity = 10f;
+
     [SerializeField] private float lateralSensitivity = 5f; // Sensibilité pour les mouvements latéraux
     [SerializeField] private float tiltAmount = 5f; // Inclinaison maximale pendant le mouvement
     [SerializeField] private float tiltDamping = 5f; // Lissage de l'inclinaison
 
     [Header("Références")]
     [SerializeField] private Transform cameraTransform;
+
     [SerializeField] private Animator animator;
 
     private CharacterController characterController;

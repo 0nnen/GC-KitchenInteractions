@@ -5,11 +5,12 @@ public class PlayerInputManager : MonoBehaviour
 {
     [Header("Interaction")]
     [SerializeField] private float interactRange = 3f;
+
     [SerializeField] private LayerMask interactableLayer;
     private Camera playerCamera;
     private Interactable currentTarget;
 
-    void Awake()
+    private void Awake()
     {
         playerCamera = Camera.main;
     }
@@ -23,7 +24,7 @@ public class PlayerInputManager : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
         CheckForInteractable();
     }

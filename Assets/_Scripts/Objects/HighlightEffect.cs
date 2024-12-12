@@ -6,7 +6,7 @@ public class HighlightEffect : MonoBehaviour
     private Material[] originalMaterials; // Stocke les matériaux d'origine
     [SerializeField] private Material outlineMaterial; // Matériau de surbrillance
 
-    void Awake()
+    private void Awake()
     {
         objectRenderer = GetComponent<Renderer>();
         if (objectRenderer != null)

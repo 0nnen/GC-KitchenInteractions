@@ -8,17 +8,19 @@ public class DragAndDropHandler : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private Transform holdingParent;
     [SerializeField] private Transform releasedParent;
-    [SerializeField] private Transform playerTransform;
 
     [Header("Réglages")]
     [SerializeField] private LayerMask interactableLayer;
     [SerializeField] private float interactionRange = 3f;
-    [SerializeField] private float dragDepth = 1f;
+    [SerializeField] private float dragDepth = 2f; // Distance fixe pour le drag
+    [SerializeField] private float minDragDepth = 1f; // Distance minimale
+    [SerializeField] private float maxDragDepth = 5f; // Distance maximale
+    [SerializeField] private float scrollSensitivity = 0.5f; // Sensibilité de la molette
     [SerializeField] private float rotationSpeed = 5f;
-    [SerializeField] private float minHeight = 0.5f; // Hauteur minimale pour empêcher les objets de passer sous le sol
+    [SerializeField] private float minHeight = 0.5f; // Hauteur minimale pour éviter le sol
 
     private GameObject selectedObject;
-    private Vector3 originalScale; // Sauvegarder la taille d'origine
+    private Vector3 offset; // Décalage entre le point cliqué et le centre de l'objet
     private bool isDragging = false;
 
     private void Awake()
@@ -31,11 +33,6 @@ public class DragAndDropHandler : MonoBehaviour
                 mainCamera = cinemachineBrain.OutputCamera;
             }
         }
-
-        if (playerTransform == null)
-        {
-            Debug.LogError("Le champ 'PlayerTransform' n'est pas assigné !");
-        }
     }
 
     private void Update()
@@ -47,6 +44,8 @@ public class DragAndDropHandler : MonoBehaviour
 
         if (isDragging && selectedObject != null)
         {
+            HandleScrollWheel();
+
             if (Input.GetMouseButton(1))
             {
                 RotateObject();
@@ -65,12 +64,7 @@ public class DragAndDropHandler : MonoBehaviour
 
     private void TryStartDragging()
     {
-        if (mainCamera == null || playerTransform == null)
-        {
-            Debug.LogError("MainCamera ou PlayerTransform non assignés !");
-            return;
-        }
-
+        if (mainCamera == null) return;
         if (EventSystem.current.IsPointerOverGameObject()) return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
@@ -78,10 +72,10 @@ public class DragAndDropHandler : MonoBehaviour
         {
             if (hit.collider.TryGetComponent<Interactable>(out Interactable interactable))
             {
-                float distanceToPlayer = Vector3.Distance(playerTransform.position, hit.collider.transform.position);
+                float distanceToPlayer = Vector3.Distance(mainCamera.transform.position, hit.collider.transform.position);
                 if (distanceToPlayer <= interactionRange)
                 {
-                    StartDragging(hit.collider.gameObject);
+                    StartDragging(hit.collider.gameObject, hit.point);
                 }
                 else
                 {
@@ -91,24 +85,19 @@ public class DragAndDropHandler : MonoBehaviour
         }
     }
 
-    private void StartDragging(GameObject obj)
+    private void StartDragging(GameObject obj, Vector3 hitPoint)
     {
         selectedObject = obj;
         isDragging = true;
 
-        // Restaurer la taille d'origine
-        originalScale = selectedObject.transform.localScale;
-        selectedObject.transform.localScale = originalScale;
+        // Calculer le décalage entre le point cliqué et le centre de l'objet
+        offset = selectedObject.transform.position - hitPoint;
 
-        // Réactiver l'objet
         selectedObject.SetActive(true);
 
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
         {
             rb.isKinematic = true;
-
-            // Désactiver temporairement les collisions avec le joueur
-            //Physics.IgnoreCollision(selectedObject.GetComponent<Collider>(), playerTransform.GetComponent<Collider>(), true);
         }
 
         if (holdingParent != null)
@@ -119,17 +108,20 @@ public class DragAndDropHandler : MonoBehaviour
 
     private void DragObject()
     {
-        Vector3 mousePosition = Input.mousePosition;
-        mousePosition.z = dragDepth; // Positionner à la profondeur spécifiée
-        Vector3 worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
+        // Obtenir la direction de la souris dans l'espace 3D
+        Vector3 mouseDirection = mainCamera.ScreenPointToRay(Input.mousePosition).direction;
 
-        // Empêcher l'objet de descendre sous la hauteur minimale
-        if (worldPosition.y < minHeight)
-        {
-            worldPosition.y = minHeight;
-        }
+        // Calculer la position cible à une distance fixe de dragDepth
+        Vector3 targetPosition = mainCamera.transform.position + mouseDirection.normalized * dragDepth;
 
-        selectedObject.transform.position = Vector3.Lerp(selectedObject.transform.position, worldPosition, 0.2f);
+        // Appliquer l'offset pour conserver le point de contact initial
+        targetPosition += offset;
+
+        // Limiter la hauteur pour éviter que l'objet passe sous le sol
+        targetPosition.y = Mathf.Max(targetPosition.y, minHeight);
+
+        // Déplacer l'objet vers la position cible
+        selectedObject.transform.position = Vector3.Lerp(selectedObject.transform.position, targetPosition, 0.2f);
     }
 
     private void RotateObject()
@@ -150,14 +142,11 @@ public class DragAndDropHandler : MonoBehaviour
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
         {
             rb.isKinematic = false;
-
-            // Réactiver les collisions avec le joueur
-            Physics.IgnoreCollision(selectedObject.GetComponent<Collider>(), playerTransform.GetComponent<Collider>(), false);
         }
 
         if (EventSystem.current.IsPointerOverGameObject())
         {
-            Inventory.Instance.AddToInventory(selectedObject);
+            InventoryUI.Instance.AddToInventory(selectedObject);
         }
         else
         {
@@ -170,12 +159,21 @@ public class DragAndDropHandler : MonoBehaviour
                 selectedObject.transform.SetParent(null);
             }
 
-            // Positionner à la profondeur définie
-            Vector3 dropPosition = mainCamera.transform.position + mainCamera.transform.forward * dragDepth;
-            dropPosition.y = Mathf.Max(minHeight, dropPosition.y); // Empêcher de passer sous le sol
-            selectedObject.transform.position = dropPosition;
+            // L'objet reste à la position actuelle (déjà gérée pendant le drag)
         }
 
         selectedObject = null;
+    }
+
+    private void HandleScrollWheel()
+    {
+        // Récupérer l'entrée de la molette de la souris
+        float scrollDelta = Input.GetAxis("Mouse ScrollWheel");
+
+        // Ajuster la profondeur du drag
+        dragDepth += scrollDelta * scrollSensitivity;
+
+        // Limiter la profondeur à minDragDepth et maxDragDepth
+        dragDepth = Mathf.Clamp(dragDepth, minDragDepth, maxDragDepth);
     }
 }

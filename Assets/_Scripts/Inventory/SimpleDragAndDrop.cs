@@ -1,16 +1,18 @@
+using Cinemachine;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using Cinemachine;
 
 public class SimpleDragAndDrop : MonoBehaviour
 {
     [Header("Références")]
     [SerializeField] private Camera mainCamera; // Caméra utilisée pour le Raycast
+
     [SerializeField] private Transform holdingParent; // Parent temporaire pendant le drag
     [SerializeField] private Transform playerTransform; // Référence au joueur
 
     [Header("Réglages")]
     [SerializeField] private LayerMask interactableLayer; // Layer des objets interactifs
+
     [SerializeField] private float interactionRange = 3f; // Distance maximale pour interagir
     [SerializeField] private float dragDepth = 1f; // Distance de l'objet devant la caméra
 
