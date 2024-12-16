@@ -10,18 +10,21 @@ public class Inventory : MonoBehaviour
     private void Awake()
     {
         if (Instance == null)
+        {
             Instance = this;
+        }
         else
+        {
             Destroy(gameObject);
+        }
     }
 
     public void AddToInventory(GameObject item)
     {
-        if (!items.Contains(item)) // Évite les doublons
+        if (!items.Contains(item))
         {
             items.Add(item);
             InventoryUI.Instance.AddToInventory(item);
-            item.SetActive(false);
         }
         else
         {
@@ -35,16 +38,10 @@ public class Inventory : MonoBehaviour
         {
             items.Remove(item);
             InventoryUI.Instance.MoveObjectToScene(item);
-            Debug.Log($"{item.name} retiré de l'inventaire.");
         }
         else
         {
             Debug.LogWarning($"{item.name} n'est pas dans l'inventaire !");
         }
-    }
-
-    public List<GameObject> GetInventoryItems()
-    {
-        return new List<GameObject>(items); // Retourne une copie pour éviter les modifications externes.
     }
 }

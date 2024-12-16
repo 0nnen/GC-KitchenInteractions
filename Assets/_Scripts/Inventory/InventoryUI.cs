@@ -2,8 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
-using UnityEngine.InputSystem;
-
 
 public class InventoryUI : MonoBehaviour
 {
@@ -14,15 +12,10 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private GameObject inventorySlotPrefab; // Prefab d'un slot
     [SerializeField] private Camera inventoryCamera; // Caméra dédiée pour les previews
     [SerializeField] private RectTransform inventoryArea; // Zone de l'inventaire
-    public RectTransform InventoryArea => inventoryArea; // Propriété publique pour accéder à InventoryArea
-
-    private int maxInventorySize = 9; // Taille maximale de l'inventaire
+    public RectTransform InventoryArea => inventoryArea;
 
     private Dictionary<GameObject, GameObject> itemSlotMapping = new Dictionary<GameObject, GameObject>();
-
-    private InputAction clickAction; // Pour détecter les clics
-    private InputAction pointAction; // Pour la position de la souris
-
+    private int maxInventorySize = 9;
 
     private void Awake()
     {
@@ -35,109 +28,19 @@ public class InventoryUI : MonoBehaviour
             Destroy(gameObject);
         }
 
+        if (inventoryCamera == null)
+            Debug.LogError("La caméra d'inventaire n'est pas assignée !");
         if (inventoryArea == null)
-        {
             Debug.LogError("La zone de l'inventaire (inventoryArea) n'est pas assignée !");
-        }
-
-        // Initialisation des actions Input System
-        clickAction = new InputAction("Click", binding: "<Mouse>/leftButton");
-        pointAction = new InputAction("Point", binding: "<Mouse>/position");
-
-        clickAction.performed += OnClickPerformed;
-
-        clickAction.Enable();
-        pointAction.Enable();
     }
-
 
     private void Update()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            // Préparer un Raycast pour détecter l'objet cliqué
-            PointerEventData pointerData = new PointerEventData(EventSystem.current)
-            {
-                position = Input.mousePosition
-            };
-
-            List<RaycastResult> results = new List<RaycastResult>();
-            EventSystem.current.RaycastAll(pointerData, results);
-
-            if (results.Count == 0)
-            {
-                Debug.Log("Aucun élément UI détecté sous la souris.");
-            }
-
-            foreach (var result in results)
-            {
-                Debug.Log($"Raycast sur : {result.gameObject.name}");
-
-                // Vérifie si le clic est sur un slot de l'inventaire
-                if (result.gameObject.transform.IsChildOf(inventoryGrid))
-                {
-                    Debug.Log($"Clic sur un élément de l'inventaire : {result.gameObject.name}");
-
-                    // Obtenir l'objet lié au slot cliqué
-                    GameObject item = GetItemFromSlot(result.gameObject);
-                    if (item != null)
-                    {
-                        Inventory.Instance.RemoveFromInventory(item);
-                        Debug.Log($"Objet {item.name} retiré de l'inventaire.");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"Aucun objet associé à ce slot : {result.gameObject.name}");
-                    }
-                    break;
-                }
-            }
+            TryRemoveItemFromInventory();
         }
     }
-
-    private void OnClickPerformed(InputAction.CallbackContext context)
-    {
-        Vector2 mousePosition = pointAction.ReadValue<Vector2>();
-
-        // Préparer le Raycast pour détecter l'objet cliqué dans l'UI
-        PointerEventData pointerData = new PointerEventData(EventSystem.current)
-        {
-            position = mousePosition
-        };
-
-        List<RaycastResult> results = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(pointerData, results);
-
-        foreach (var result in results)
-        {
-            // Vérifie si le clic est sur un slot de l'inventaire
-            if (result.gameObject.transform.IsChildOf(inventoryGrid))
-            {
-                Debug.Log($"Clic sur un slot de l'inventaire : {result.gameObject.name}");
-
-                // Récupérer l'objet lié au slot
-                GameObject item = GetItemFromSlot(result.gameObject);
-                if (item != null)
-                {
-                    // Retirer l'objet de l'inventaire et le replacer dans la scène
-                    Inventory.Instance.RemoveFromInventory(item);
-                    Debug.Log($"Objet {item.name} retiré de l'inventaire.");
-                }
-                else
-                {
-                    Debug.LogWarning("Slot cliqué, mais aucun objet trouvé !");
-                }
-                break;
-            }
-        }
-    }
-
-    private void OnDestroy()
-    {
-        clickAction.Disable();
-        pointAction.Disable();
-    }
-
 
     public void AddToInventory(GameObject item)
     {
@@ -147,58 +50,58 @@ public class InventoryUI : MonoBehaviour
             return;
         }
 
-        // Créer un slot dans la grille
         GameObject slot = Instantiate(inventorySlotPrefab, inventoryGrid);
 
-        // Capturer l'aperçu de l'objet pour l'UI
         RenderTexture renderTexture = CreateRenderTexture(item);
 
-        // Associer la Render Texture au RawImage du slot
         RawImage slotImage = slot.GetComponentInChildren<RawImage>();
         if (slotImage != null)
         {
             slotImage.texture = renderTexture;
         }
 
-        // Lier l'objet réel au slot via le dictionnaire
         itemSlotMapping[item] = slot;
 
-        Debug.Log($"Objet {item.name} lié au slot {slot.name}.");
+        Debug.Log($"{item.name} ajouté à l'inventaire.");
 
-        // Désactiver l'objet réel dans le monde
         item.SetActive(false);
     }
-
-
 
     public void MoveObjectToScene(GameObject item)
     {
         if (itemSlotMapping.ContainsKey(item))
         {
-            // Détruire le slot visuel
-            Destroy(itemSlotMapping[item]);
+            GameObject slot = itemSlotMapping[item];
+
+            // Vérifiez si le slot existe avant de le détruire
+            if (slot != null)
+            {
+                Destroy(slot);
+            }
+
             itemSlotMapping.Remove(item);
 
             // Réactiver l'objet réel
-            item.SetActive(true);
-            item.transform.SetParent(null);
-
-            // Positionner l'objet devant la caméra
-            Camera mainCam = Camera.main;
-            if (mainCam != null)
+            if (item != null)
             {
-                item.transform.position = mainCam.transform.position + mainCam.transform.forward * 2f;
-                item.transform.rotation = Quaternion.identity;
-            }
+                item.SetActive(true);
+                item.transform.SetParent(null);
 
-            Debug.Log($"{item.name} retiré de l'inventaire et replacé dans la scène.");
+                Camera mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    item.transform.position = mainCam.transform.position + mainCam.transform.forward * 2f;
+                    item.transform.rotation = Quaternion.identity;
+                }
+
+                Debug.Log($"{item.name} retiré de l'inventaire et replacé dans la scène.");
+            }
         }
         else
         {
             Debug.LogWarning($"{item.name} n'a pas de slot associé dans l'inventaire !");
         }
     }
-
 
     private RenderTexture CreateRenderTexture(GameObject item)
     {
@@ -218,24 +121,64 @@ public class InventoryUI : MonoBehaviour
         return renderTexture;
     }
 
-    private void MoveObjectToInventorySlot(GameObject item, GameObject slot)
-    {
-        item.transform.SetParent(slot.transform);
-        item.transform.localPosition = Vector3.zero;
-        item.transform.localScale = Vector3.one;
-        item.transform.localRotation = Quaternion.identity;
-    }
-
-    public bool IsPointerOverInventoryArea()
+    private void TryRemoveItemFromInventory()
     {
         PointerEventData pointerData = new PointerEventData(EventSystem.current)
         {
             position = Input.mousePosition
         };
 
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        foreach (var result in results)
+        {
+            if (result.gameObject.transform.IsChildOf(inventoryGrid))
+            {
+                GameObject slot = result.gameObject;
+                GameObject item = GetItemFromSlot(slot);
+
+                if (item != null)
+                {
+                    Inventory.Instance.RemoveFromInventory(item);
+                    Debug.Log($"{item.name} retiré de l'inventaire.");
+                }
+                else
+                {
+                    Debug.LogWarning($"Aucun objet trouvé pour le slot {slot.name}.");
+                }
+
+                break;
+            }
+        }
+    }
+
+    private GameObject GetItemFromSlot(GameObject slot)
+    {
+        foreach (var pair in itemSlotMapping)
+        {
+            if (pair.Value == slot)
+            {
+                return pair.Key;
+            }
+        }
+
+        return null;
+    }
+
+    public bool IsPointerOverInventoryArea()
+    {
+        // Préparer un PointerEventData pour détecter la position de la souris
+        PointerEventData pointerData = new PointerEventData(EventSystem.current)
+        {
+            position = Input.mousePosition
+        };
+
+        // Effectuer un Raycast sur les objets UI
         List<RaycastResult> raycastResults = new List<RaycastResult>();
         EventSystem.current.RaycastAll(pointerData, raycastResults);
 
+        // Vérifier si l'un des objets sous le curseur appartient à l'inventaire
         foreach (var result in raycastResults)
         {
             if (result.gameObject.transform.IsChildOf(inventoryArea))
@@ -246,21 +189,5 @@ public class InventoryUI : MonoBehaviour
 
         return false;
     }
-
-    private GameObject GetItemFromSlot(GameObject slot)
-    {
-        // Chercher directement l'objet lié dans le dictionnaire
-        foreach (var pair in itemSlotMapping)
-        {
-            if (pair.Value == slot) // Le slot correspond à un élément du dictionnaire
-            {
-                return pair.Key; // Retourner l'objet associé
-            }
-        }
-
-        Debug.LogWarning($"Aucun objet trouvé pour le slot : {slot.name}");
-        return null;
-    }
-
 
 }

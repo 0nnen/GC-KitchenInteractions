@@ -115,7 +115,12 @@ public class DragAndDropManager : MonoBehaviour
         }
         else
         {
-            Destroy(gameObject);
+            if (selectedObject != null)
+            {
+                selectedObject.SetActive(false); // Désactiver l'objet pour éviter les interactions
+                Destroy(selectedObject, 0.1f);   // Détruire après un délai pour laisser l'Input System se mettre à jour
+                selectedObject = null;          // Nettoyer la référence
+            }
         }
 
         if (mainCamera == null)
