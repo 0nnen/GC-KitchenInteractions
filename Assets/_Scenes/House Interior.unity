@@ -213,111 +213,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1602555753}
   m_SourcePrefab: {fileID: 100100000, guid: 21b06e78aab71e2418d4bde26deee621, type: 3}
---- !u!1 &6663539
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6663540}
-  - component: {fileID: 6663543}
-  - component: {fileID: 6663542}
-  - component: {fileID: 6663541}
-  m_Layer: 6
-  m_Name: Cube
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6663540
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6663539}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.82, y: 3.4, z: 0}
-  m_LocalScale: {x: 3.1, y: 6.8, z: 1.82}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 204768375}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &6663541
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6663539}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &6663542
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6663539}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &6663543
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6663539}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &15687170 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6410312289868427342, guid: 2bfcc222ac8533c4cb2f82e6d984c66a,
@@ -1028,7 +923,7 @@ MonoBehaviour:
   interactText: {fileID: 2123658309}
   fridgeUI: {fileID: 1819623968}
   playerTransform: {fileID: 111956957}
-  interactionRange: 1
+  interactionRange: 1.5
 --- !u!1 &214011798
 GameObject:
   m_ObjectHideFlags: 0
@@ -1341,59 +1236,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 353162114}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &377076315
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 377076316}
-  - component: {fileID: 377076317}
-  m_Layer: 6
-  m_Name: Collider
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &377076316
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 377076315}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.34284, z: -0, w: 0.9393938}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.74999994, y: 0.74999994, z: 0.74999994}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1116232693}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &377076317
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 377076315}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.43, y: 0.19, z: 1.48}
-  m_Center: {x: 0, y: 0.15, z: 0}
 --- !u!1 &384524738
 GameObject:
   m_ObjectHideFlags: 0
@@ -1725,34 +1567,37 @@ MonoBehaviour:
   releasedParent: {fileID: 1127382855}
   outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
   hoverColor: {r: 1, g: 0.5670939, b: 0, a: 1}
-  dragColor: {r: 0.015686274, g: 0.38249233, b: 1, a: 1}
+  dragColor: {r: 0.86253226, g: 0.015686274, b: 1, a: 1}
   dragDepth: 0.5
   minDragDepth: 0.5
   maxDragDepth: 5
   scrollSensitivity: 1
+  smoothSpeed: 8
   rotationSpeed: 5
   interactableLayer:
     serializedVersion: 2
     m_Bits: 64
-  overlapSphereRadius: 1.41
+  overlapSphereRadius: 0.09
   objectConfigs:
   - prefab: {fileID: 1262299232}
     canReceiveChildren: 0
     hasDoor: 1
-    isMovable: 1
+    isMovable: 0
     dropZoneCollider: {fileID: 0}
     doorTransform: {fileID: 1141493083}
     rotateDoorOnX: 1
     rotateDoorOnY: 0
+    invertDoorRotation: 0
     doorRotationLimit: 80
   - prefab: {fileID: 204768374}
     canReceiveChildren: 0
     hasDoor: 1
-    isMovable: 1
+    isMovable: 0
     dropZoneCollider: {fileID: 0}
     doorTransform: {fileID: 1765448667}
     rotateDoorOnX: 0
     rotateDoorOnY: 1
+    invertDoorRotation: 0
     doorRotationLimit: 80
   - prefab: {fileID: 204768374}
     canReceiveChildren: 0
@@ -1762,6 +1607,7 @@ MonoBehaviour:
     doorTransform: {fileID: 1333844741}
     rotateDoorOnX: 0
     rotateDoorOnY: 1
+    invertDoorRotation: 0
     doorRotationLimit: 80
   - prefab: {fileID: 444590448}
     canReceiveChildren: 0
@@ -1771,6 +1617,7 @@ MonoBehaviour:
     doorTransform: {fileID: 0}
     rotateDoorOnX: 0
     rotateDoorOnY: 0
+    invertDoorRotation: 0
     doorRotationLimit: 0
   - prefab: {fileID: 1305498039}
     canReceiveChildren: 0
@@ -1780,6 +1627,7 @@ MonoBehaviour:
     doorTransform: {fileID: 0}
     rotateDoorOnX: 0
     rotateDoorOnY: 0
+    invertDoorRotation: 0
     doorRotationLimit: 0
   - prefab: {fileID: 703610364}
     canReceiveChildren: 0
@@ -1789,6 +1637,7 @@ MonoBehaviour:
     doorTransform: {fileID: 0}
     rotateDoorOnX: 1
     rotateDoorOnY: 0
+    invertDoorRotation: 0
     doorRotationLimit: 80
   - prefab: {fileID: 2067496227}
     canReceiveChildren: 1
@@ -1798,6 +1647,7 @@ MonoBehaviour:
     doorTransform: {fileID: 0}
     rotateDoorOnX: 1
     rotateDoorOnY: 0
+    invertDoorRotation: 0
     doorRotationLimit: 80
   - prefab: {fileID: 480124490}
     canReceiveChildren: 1
@@ -1807,15 +1657,17 @@ MonoBehaviour:
     doorTransform: {fileID: 0}
     rotateDoorOnX: 1
     rotateDoorOnY: 0
+    invertDoorRotation: 0
     doorRotationLimit: 80
   - prefab: {fileID: 1116232692}
-    canReceiveChildren: 1
+    canReceiveChildren: 0
     hasDoor: 0
     isMovable: 1
-    dropZoneCollider: {fileID: 377076317}
+    dropZoneCollider: {fileID: 0}
     doorTransform: {fileID: 0}
     rotateDoorOnX: 1
     rotateDoorOnY: 0
+    invertDoorRotation: 0
     doorRotationLimit: 80
   - prefab: {fileID: 1375245627}
     canReceiveChildren: 1
@@ -1825,6 +1677,7 @@ MonoBehaviour:
     doorTransform: {fileID: 0}
     rotateDoorOnX: 1
     rotateDoorOnY: 0
+    invertDoorRotation: 0
     doorRotationLimit: 80
   - prefab: {fileID: 1250631124}
     canReceiveChildren: 1
@@ -1834,6 +1687,7 @@ MonoBehaviour:
     doorTransform: {fileID: 0}
     rotateDoorOnX: 1
     rotateDoorOnY: 0
+    invertDoorRotation: 0
     doorRotationLimit: 80
   showGizmos: 1
 --- !u!1 &480124490 stripped
@@ -7687,7 +7541,7 @@ PrefabInstance:
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: -0.35
+      value: 0.35
       objectReference: {fileID: 0}
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
@@ -7712,7 +7566,7 @@ PrefabInstance:
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -109.58
+      value: -108.24
       objectReference: {fileID: 0}
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
@@ -7766,11 +7620,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 6663540}
+    m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7139417653591120450, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
@@ -8050,7 +7900,7 @@ PrefabInstance:
     - target: {fileID: 9186155906313511078, guid: d41373a2293462542a8e0a938c149d46,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -106.528
+      value: -105.054
       objectReference: {fileID: 0}
     - target: {fileID: 9186155906313511078, guid: d41373a2293462542a8e0a938c149d46,
         type: 3}
@@ -8094,11 +7944,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 9186155906313511078, guid: d41373a2293462542a8e0a938c149d46,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 377076316}
+    m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 3702283098375289871, guid: d41373a2293462542a8e0a938c149d46,
         type: 3}
@@ -11780,7 +11626,7 @@ Transform:
   m_GameObject: {fileID: 4445998969632137391}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.0490212, y: 1.0634999, z: 0.2949485}
+  m_LocalPosition: {x: 0.18, y: 1.0634999, z: 0.2949485}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -14604,13 +14450,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5089241877578361006}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.2137858, y: -0.3228742, z: 2.630815}
+  m_LocalRotation: {x: -0, y: -0.15839432, z: -0, w: 0.9873759}
+  m_LocalPosition: {x: 1.14, y: -0.3228742, z: 2.06}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 543450653484868950}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -18.227, z: 0}
 --- !u!1 &5486834032284762547
 GameObject:
   m_ObjectHideFlags: 0
@@ -16241,13 +16087,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4315969376715310195}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.2137858, y: -0.3228742, z: 5.2732677}
+  m_LocalRotation: {x: -0, y: 0.44025064, z: -0, w: 0.89787495}
+  m_LocalPosition: {x: 1.372, y: -0.3228742, z: 5.606}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 543450653484868950}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 52.24, z: 0}
 --- !u!64 &7061598321268101372
 MeshCollider:
   m_ObjectHideFlags: 0
