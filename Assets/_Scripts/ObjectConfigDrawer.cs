@@ -27,6 +27,7 @@ public class ObjectConfigDrawer : PropertyDrawer
         var doorTransformProp = property.FindPropertyRelative("doorTransform");
         var rotateDoorOnXProp = property.FindPropertyRelative("rotateDoorOnX");
         var rotateDoorOnYProp = property.FindPropertyRelative("rotateDoorOnY");
+        var invertDoorRotation = property.FindPropertyRelative("invertDoorRotation");
         var doorRotationLimitProp = property.FindPropertyRelative("doorRotationLimit");
 
         // Dessiner les champs
@@ -65,6 +66,9 @@ public class ObjectConfigDrawer : PropertyDrawer
             EditorGUI.PropertyField(currentRect, rotateDoorOnYProp);
             currentRect.y += LineHeight + VerticalSpacing;
 
+            EditorGUI.PropertyField(currentRect, invertDoorRotation);
+            currentRect.y += LineHeight + VerticalSpacing;
+
             EditorGUI.PropertyField(currentRect, doorRotationLimitProp);
             currentRect.y += LineHeight + VerticalSpacing;
         }
@@ -91,9 +95,9 @@ public class ObjectConfigDrawer : PropertyDrawer
 
         if (property.FindPropertyRelative("hasDoor").boolValue)
         {
-            totalHeight += LineHeight + VerticalSpacing * 10; // Pour les paramètres de porte
+            totalHeight += LineHeight + VerticalSpacing * 15; // Pour les paramètres de porte
         }
 
-        return totalHeight + 30;
+        return totalHeight + 60;
     }
 }

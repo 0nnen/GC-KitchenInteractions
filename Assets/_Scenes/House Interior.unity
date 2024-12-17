@@ -1028,7 +1028,7 @@ MonoBehaviour:
   interactText: {fileID: 2123658309}
   fridgeUI: {fileID: 1819623968}
   playerTransform: {fileID: 111956957}
-  interactionRange: 9.57
+  interactionRange: 1
 --- !u!1 &214011798
 GameObject:
   m_ObjectHideFlags: 0
@@ -1726,9 +1726,9 @@ MonoBehaviour:
   outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
   hoverColor: {r: 1, g: 0.5670939, b: 0, a: 1}
   dragColor: {r: 0.015686274, g: 0.38249233, b: 1, a: 1}
-  dragDepth: 2
-  minDragDepth: 0.7
-  maxDragDepth: 5.69
+  dragDepth: 0.5
+  minDragDepth: 0.5
+  maxDragDepth: 5
   scrollSensitivity: 1
   rotationSpeed: 5
   interactableLayer:
@@ -1744,7 +1744,7 @@ MonoBehaviour:
     doorTransform: {fileID: 1141493083}
     rotateDoorOnX: 1
     rotateDoorOnY: 0
-    doorRotationLimit: 49.82
+    doorRotationLimit: 80
   - prefab: {fileID: 204768374}
     canReceiveChildren: 0
     hasDoor: 1
@@ -1753,7 +1753,7 @@ MonoBehaviour:
     doorTransform: {fileID: 1765448667}
     rotateDoorOnX: 0
     rotateDoorOnY: 1
-    doorRotationLimit: -80
+    doorRotationLimit: 80
   - prefab: {fileID: 204768374}
     canReceiveChildren: 0
     hasDoor: 1
@@ -1921,8 +1921,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 850580fc1982ea546b4898cdd7052304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  highlightEffect: {fileID: 489606386}
-  canReceiveChildren: 0
 --- !u!114 &489606386
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1935,9 +1933,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a17375c444bc0844accd332d65696b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
-  originalMaterials: []
-  outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
 --- !u!54 &489606387
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2288,8 +2283,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 850580fc1982ea546b4898cdd7052304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  highlightEffect: {fileID: 543551302}
-  canReceiveChildren: 0
 --- !u!114 &543551302
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2302,9 +2295,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a17375c444bc0844accd332d65696b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
-  originalMaterials: []
-  outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
 --- !u!54 &543551303
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3461,8 +3451,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 850580fc1982ea546b4898cdd7052304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  highlightEffect: {fileID: 832880224}
-  canReceiveChildren: 0
 --- !u!114 &832880224
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3475,9 +3463,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a17375c444bc0844accd332d65696b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
-  originalMaterials: []
-  outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
 --- !u!54 &832880225
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3583,8 +3568,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 850580fc1982ea546b4898cdd7052304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  highlightEffect: {fileID: 875035087}
-  canReceiveChildren: 0
 --- !u!114 &875035087
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3597,9 +3580,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a17375c444bc0844accd332d65696b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
-  originalMaterials: []
-  outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
 --- !u!54 &875035088
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3969,8 +3949,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 850580fc1982ea546b4898cdd7052304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  highlightEffect: {fileID: 926637412}
-  canReceiveChildren: 0
 --- !u!114 &926637412
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3983,9 +3961,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a17375c444bc0844accd332d65696b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
-  originalMaterials: []
-  outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
 --- !u!54 &926637413
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -5004,9 +4979,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a17375c444bc0844accd332d65696b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
-  originalMaterials: []
-  outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
 --- !u!64 &1171722687
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -6133,8 +6105,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 850580fc1982ea546b4898cdd7052304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  highlightEffect: {fileID: 1553546592}
-  canReceiveChildren: 0
 --- !u!114 &1553546592
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6147,9 +6117,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a17375c444bc0844accd332d65696b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
-  originalMaterials: []
-  outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
 --- !u!54 &1553546593
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -6640,8 +6607,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 850580fc1982ea546b4898cdd7052304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  highlightEffect: {fileID: 1602555754}
-  canReceiveChildren: 0
 --- !u!114 &1602555754
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6654,9 +6619,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a17375c444bc0844accd332d65696b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
-  originalMaterials: []
-  outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
 --- !u!54 &1602555755
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -7725,22 +7687,22 @@ PrefabInstance:
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.34
+      value: -0.35
       objectReference: {fileID: 0}
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.34
+      value: 0.35
       objectReference: {fileID: 0}
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.34
+      value: 0.35
       objectReference: {fileID: 0}
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.209
+      value: -2.21
       objectReference: {fileID: 0}
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
@@ -7750,7 +7712,7 @@ PrefabInstance:
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -108.138
+      value: -109.58
       objectReference: {fileID: 0}
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
@@ -7790,7 +7752,7 @@ PrefabInstance:
     - target: {fileID: 7202101694271153362, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
       propertyPath: m_ConstrainProportionsScale
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8030262997102069158, guid: 16787142c6586874283425bcc5be29ef,
         type: 3}
@@ -8171,8 +8133,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 850580fc1982ea546b4898cdd7052304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  highlightEffect: {fileID: 2045726242}
-  canReceiveChildren: 0
 --- !u!114 &2045726242
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8185,9 +8145,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a17375c444bc0844accd332d65696b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
-  originalMaterials: []
-  outlineMaterial: {fileID: 2100000, guid: c5d827832e4dd8d4d8a298ad41cd4364, type: 2}
 --- !u!54 &2045726243
 Rigidbody:
   m_ObjectHideFlags: 0

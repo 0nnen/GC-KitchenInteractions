@@ -73,35 +73,40 @@ public class InventoryUI : MonoBehaviour
         {
             GameObject slot = itemSlotMapping[item];
 
-            // Vérifiez si le slot existe avant de le détruire
+            // Désactiver le slot et nettoyer la référence
             if (slot != null)
             {
-                Destroy(slot);
+                slot.SetActive(false);
+                Destroy(slot, 0.1f); // Détruire avec un léger délai
             }
-
             itemSlotMapping.Remove(item);
 
-            // Réactiver l'objet réel
+            // Réactiver l'objet dans la scène
             if (item != null)
             {
                 item.SetActive(true);
                 item.transform.SetParent(null);
 
+                // Positionner l'objet devant la caméra
                 Camera mainCam = Camera.main;
                 if (mainCam != null)
                 {
-                    item.transform.position = mainCam.transform.position + mainCam.transform.forward * 2f;
+                    item.transform.position = mainCam.transform.position + mainCam.transform.forward * 1.1f;
                     item.transform.rotation = Quaternion.identity;
                 }
 
                 Debug.Log($"{item.name} retiré de l'inventaire et replacé dans la scène.");
             }
+
+            // Réinitialiser l'EventSystem pour éviter les erreurs
+            EventSystem.current.SetSelectedGameObject(null);
         }
         else
         {
             Debug.LogWarning($"{item.name} n'a pas de slot associé dans l'inventaire !");
         }
     }
+
 
     private RenderTexture CreateRenderTexture(GameObject item)
     {

@@ -18,19 +18,30 @@ public class Inventory : MonoBehaviour
             Destroy(gameObject);
         }
     }
-
     public void AddToInventory(GameObject item)
     {
+        // Rechercher le ObjectConfig correspondant à l'item dans la liste
+        ObjectConfig config = DragAndDropManager.Instance.GetConfigForPrefab(item);
+
+        if (config != null && !config.isMovable)
+        {
+            Debug.LogWarning($"{item.name} ne peut pas être ajouté à l'inventaire car il n'est pas déplaçable.");
+            return;
+        }
+
         if (!items.Contains(item))
         {
             items.Add(item);
             InventoryUI.Instance.AddToInventory(item);
+            Debug.Log($"{item.name} ajouté à l'inventaire.");
         }
         else
         {
             Debug.LogWarning($"{item.name} est déjà dans l'inventaire !");
         }
     }
+
+
 
     public void RemoveFromInventory(GameObject item)
     {

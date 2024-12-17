@@ -23,6 +23,9 @@ public class ObjectConfig
     [Tooltip("Rotation sur l'axe Y. Visible si 'hasDoor' est activé.")]
     public bool rotateDoorOnY = true;
 
+    [Tooltip("Inverser la direction de rotation de la porte.")]
+    public bool invertDoorRotation = false;
+
     [Tooltip("Limite de rotation de la porte en degrés. Visible si 'hasDoor' est activé.")]
     public float doorRotationLimit = 120f;
 }
@@ -55,7 +58,7 @@ public class DragAndDropManager : MonoBehaviour
     [Space(10)]
     [Header("Paramètres de Drag")]
     [Tooltip("Distance par défaut entre l'objet et la caméra pendant le drag.")]
-    [Range(1f, 10f)]
+    [Range(0.1f, 5f)]
     [SerializeField] private float dragDepth = 2f;
 
     [Tooltip("Distance minimale entre l'objet et la caméra.")]
@@ -70,6 +73,10 @@ public class DragAndDropManager : MonoBehaviour
     [Range(0.1f, 2f)]
     [SerializeField] private float scrollSensitivity = 0.5f;
 
+    [Space(2)]
+    [Header("Smooth Drag")]
+    [Tooltip("Vitesse de lissage pendant le drag (valeurs basses pour un mouvement plus doux).")]
+    [SerializeField] private float smoothSpeed = 8f;
 
     [Space(10)]
     [Header("Paramètres de Rotation")]
@@ -103,6 +110,12 @@ public class DragAndDropManager : MonoBehaviour
     private Material[] originalMaterials;
     private ObjectConfig currentConfig;
     private float currentDoorRotation = 0f;
+    private Material[] doorOriginalMaterials; // Matériaux d'origine de la porte
+    private Renderer doorRenderer; // Renderer de la porte pour appliquer l'outline
+    private GameObject hoveredObject; // Référence à l'objet survolé
+    private Renderer hoveredRenderer; // Renderer de l'objet survolé
+    private Material[] hoveredOriginalMaterials; // Matériaux originaux de l'objet survolé
+
 
     public static DragAndDropManager Instance { get; private set; }
     public bool IsMovable { get; private set; }
@@ -132,6 +145,8 @@ public class DragAndDropManager : MonoBehaviour
 
     private void Update()
     {
+        HandleHover(); // Gestion du survol
+
         if (Input.GetMouseButtonDown(0) && !isDragging)
         {
             TryStartDragging();
@@ -159,6 +174,7 @@ public class DragAndDropManager : MonoBehaviour
         }
     }
 
+
     // Initialisation avec l'état de l'objet
     private void Initialize(GameObject item)
     {
@@ -173,17 +189,24 @@ public class DragAndDropManager : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, interactableLayer))
         {
-            Debug.Log($"Détection d'un objet interactif : {hit.collider.gameObject.name}");
+            GameObject hitObject = hit.collider.gameObject;
+
             foreach (var config in objectConfigs)
             {
-                if (hit.collider.gameObject == config.prefab)
+                // Vérifier si la porte a été touchée directement
+                if (config.doorTransform != null && hitObject == config.doorTransform.gameObject)
                 {
-                    if (!config.isMovable)
-                    {
-                        Debug.LogWarning($"{config.prefab.name} n'est pas déplaçable.");
-                        return;
-                    }
+                    Debug.Log($"Sélection directe de la porte : {hitObject.name}");
+                    selectedObject = config.prefab; // Sélectionner le prefab parent
+                    currentConfig = config;
+                    dragDepth = Vector3.Distance(mainCamera.transform.position, selectedObject.transform.position);
+                    StartDragging(hit.point);
+                    return;
+                }
 
+                // Sinon, vérifier si c'est le prefab lui-même
+                if (hitObject == config.prefab)
+                {
                     selectedObject = config.prefab;
                     currentConfig = config;
                     dragDepth = Vector3.Distance(mainCamera.transform.position, selectedObject.transform.position);
@@ -198,17 +221,37 @@ public class DragAndDropManager : MonoBehaviour
         }
     }
 
+
     private void StartDragging(Vector3 hitPoint)
     {
         isDragging = true;
 
-        Renderer renderer = selectedObject.GetComponent<Renderer>();
-        if (renderer != null)
+        // Initialiser la distance de drag
+        dragDepth = Vector3.Distance(mainCamera.transform.position, selectedObject.transform.position);
+        dragDepth = Mathf.Clamp(dragDepth, minDragDepth, maxDragDepth);
+
+        // Appliquer l'outline
+        if (currentConfig.hasDoor && currentConfig.doorTransform != null)
         {
-            originalMaterials = renderer.materials;
-            var materials = new List<Material>(originalMaterials) { outlineMaterial };
-            renderer.materials = materials.ToArray();
-            outlineMaterial.SetColor("_Color", dragColor);
+            doorRenderer = currentConfig.doorTransform.GetComponent<Renderer>();
+            if (doorRenderer != null)
+            {
+                doorOriginalMaterials = doorRenderer.materials;
+                var materials = new List<Material>(doorOriginalMaterials) { outlineMaterial };
+                doorRenderer.materials = materials.ToArray();
+                outlineMaterial.SetColor("_Color", dragColor);
+            }
+        }
+        else
+        {
+            Renderer renderer = selectedObject.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                originalMaterials = renderer.materials;
+                var materials = new List<Material>(originalMaterials) { outlineMaterial };
+                renderer.materials = materials.ToArray();
+                outlineMaterial.SetColor("_Color", dragColor);
+            }
         }
 
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
@@ -217,12 +260,41 @@ public class DragAndDropManager : MonoBehaviour
         selectedObject.transform.SetParent(holdingParent);
     }
 
+
     private void DragObject()
     {
+        // Gestion du Scroll pour ajuster la profondeur
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (Mathf.Abs(scroll) > Mathf.Epsilon) // Si un scroll est détecté
+        {
+            dragDepth += scroll * scrollSensitivity; // Ajuster la profondeur
+            dragDepth = Mathf.Clamp(dragDepth, minDragDepth, maxDragDepth); // Limiter la profondeur
+        }
+
+        // Calculer la nouvelle position cible
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         Vector3 targetPosition = mainCamera.transform.position + ray.direction.normalized * dragDepth;
-        selectedObject.transform.position = Vector3.Lerp(selectedObject.transform.position, targetPosition, 0.2f);
+
+        // Vérifier les collisions avec un Raycast
+        RaycastHit hit;
+        Vector3 direction = targetPosition - selectedObject.transform.position;
+        float distance = direction.magnitude;
+
+        if (Physics.Raycast(selectedObject.transform.position, direction.normalized, out hit, distance))
+        {
+            // Limiter la position juste avant la collision
+            targetPosition = hit.point - direction.normalized * 0.1f;
+        }
+
+        // Appliquer un lissage avec Lerp pour un mouvement fluide
+        selectedObject.transform.position = Vector3.Lerp(
+            selectedObject.transform.position,
+            targetPosition,
+            Time.deltaTime * smoothSpeed
+        );
     }
+
+
 
     private void RotateObject()
     {
@@ -237,20 +309,33 @@ public class DragAndDropManager : MonoBehaviour
     {
         float mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
 
-        float newRotation = Mathf.Clamp(currentDoorRotation + mouseX, 0, currentConfig.doorRotationLimit);
-        float rotationStep = newRotation - currentDoorRotation;
+        // Inversion de la direction si nécessaire
+        if (currentConfig.invertDoorRotation)
+        {
+            mouseX = -mouseX;
+        }
 
+        // Calcule la nouvelle rotation
+        float newRotation = currentDoorRotation + mouseX;
+
+        // Applique le clamp pour respecter les limites (positives et négatives)
+        newRotation = Mathf.Clamp(newRotation, -currentConfig.doorRotationLimit, currentConfig.doorRotationLimit);
+
+        // Applique la rotation en fonction de l'axe sélectionné
         if (currentConfig.rotateDoorOnX)
         {
-            currentConfig.doorTransform.Rotate(Vector3.right, rotationStep, Space.Self);
+            currentConfig.doorTransform.localRotation = Quaternion.Euler(newRotation, 0f, 0f);
         }
         else if (currentConfig.rotateDoorOnY)
         {
-            currentConfig.doorTransform.Rotate(Vector3.up, rotationStep, Space.Self);
+            currentConfig.doorTransform.localRotation = Quaternion.Euler(0f, newRotation, 0f);
         }
 
+        // Met à jour la valeur de la rotation actuelle
         currentDoorRotation = newRotation;
     }
+
+
 
 
 
@@ -259,14 +344,31 @@ public class DragAndDropManager : MonoBehaviour
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
             rb.isKinematic = false;
 
-        Renderer renderer = selectedObject.GetComponent<Renderer>();
-        if (renderer != null && originalMaterials != null)
-            renderer.materials = originalMaterials;
+        // Réinitialisation des matériaux
+        if (currentConfig.hasDoor && doorRenderer != null)
+        {
+            doorRenderer.materials = doorOriginalMaterials;
+            doorRenderer = null;
+        }
+        else
+        {
+            Renderer renderer = selectedObject.GetComponent<Renderer>();
+            if (renderer != null && originalMaterials != null)
+                renderer.materials = originalMaterials;
+        }
 
         // Vérifie si l'objet est relâché dans l'inventaire
         if (InventoryUI.Instance.IsPointerOverInventoryArea())
         {
-            Inventory.Instance.AddToInventory(selectedObject);
+            if (currentConfig.isMovable) // Vérifie si l'objet est déplaçable
+            {
+                Inventory.Instance.AddToInventory(selectedObject);
+                Debug.Log($"{selectedObject.name} ajouté à l'inventaire.");
+            }
+            else
+            {
+                Debug.LogWarning($"{selectedObject.name} ne peut pas être ajouté à l'inventaire car il n'est pas déplaçable.");
+            }
         }
         else if (currentConfig.canReceiveChildren)
         {
@@ -278,22 +380,90 @@ public class DragAndDropManager : MonoBehaviour
                 {
                     selectedObject.transform.SetParent(collider.transform);
                     Debug.Log($"{selectedObject.name} est devenu un enfant de {collider.name}");
-                    selectedObject = null;
-                    isDragging = false;
-                    return;
+                    break;
                 }
             }
         }
         else
         {
-            // Relâche l'objet dans la scène
             selectedObject.transform.SetParent(releasedParent);
             Debug.Log($"{selectedObject.name} relâché dans la scène.");
         }
 
+        // Nettoyage des variables
         selectedObject = null;
         currentConfig = null;
         isDragging = false;
+    }
+
+    private void HandleHover()
+    {
+        if (isDragging) return; // Ne pas gérer le survol pendant un drag
+
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, interactableLayer))
+        {
+            GameObject hitObject = hit.collider.gameObject;
+
+            if (hoveredObject != hitObject) // Nouveau survol détecté
+            {
+                ClearHover(); // Réinitialise l'outline précédent
+
+                foreach (var config in objectConfigs)
+                {
+                    // Vérifie si la porte est survolée
+                    if (config.hasDoor && config.doorTransform != null && hitObject == config.doorTransform.gameObject)
+                    {
+                        hoveredObject = hitObject;
+                        hoveredRenderer = config.doorTransform.GetComponent<Renderer>();
+
+                        if (hoveredRenderer != null)
+                        {
+                            ApplyOutline(hoveredRenderer);
+                            return; // Sortir après avoir appliqué l'outline sur la porte
+                        }
+                    }
+
+                    // Sinon, vérifie si c'est le prefab entier
+                    if (hitObject == config.prefab)
+                    {
+                        hoveredObject = hitObject;
+                        hoveredRenderer = hoveredObject.GetComponent<Renderer>();
+
+                        if (hoveredRenderer != null)
+                        {
+                            ApplyOutline(hoveredRenderer);
+                            return; // Sortir après avoir appliqué l'outline sur le prefab
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            ClearHover(); // Si rien n'est survolé
+        }
+    }
+
+
+    private void ClearHover()
+    {
+        if (hoveredRenderer != null && hoveredOriginalMaterials != null)
+        {
+            hoveredRenderer.materials = hoveredOriginalMaterials; // Restaure les matériaux d'origine
+        }
+
+        hoveredObject = null;
+        hoveredRenderer = null;
+        hoveredOriginalMaterials = null;
+    }
+
+    private void ApplyOutline(Renderer renderer)
+    {
+        hoveredOriginalMaterials = renderer.materials;
+        var materials = new List<Material>(hoveredOriginalMaterials) { outlineMaterial };
+        renderer.materials = materials.ToArray();
+        outlineMaterial.SetColor("_Color", hoverColor); // Applique la couleur de survol
     }
 
     private bool IsPointerOverInventory()
