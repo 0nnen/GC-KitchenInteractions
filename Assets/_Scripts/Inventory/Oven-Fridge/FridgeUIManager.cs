@@ -1,106 +1,190 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using TMPro;
+using UnityEngine.EventSystems;
 
 public class FridgeUIManager : MonoBehaviour
 {
+    public static FridgeUIManager Instance;
+
     [Header("UI Références")]
     [SerializeField] private GameObject fridgeUI;       // Canvas de l'interface du frigo
-    [SerializeField] private Transform slotGrid;        // Grille des slots pour afficher les ingrédients
-    [SerializeField] private GameObject slotPrefab;     // Prefab pour un slot
-    [SerializeField] private GameObject tabButtonPrefab; // Prefab pour un bouton d'onglet
-    [SerializeField] private Transform tabParent;       // Parent des onglets
-    [SerializeField] private TMP_Text descriptionText;      // Texte de description
-    [SerializeField] private Image ingredientImage;     // Image pour l'aperçu
+    [SerializeField] private Transform fridgeGrid;      // Grille des slots du frigo
+    [SerializeField] private GameObject fridgeSlotPrefab; // Prefab pour un slot du frigo
+    [SerializeField] private RectTransform fridgeArea;  // Zone du frigo
+    public RectTransform FridgeArea => fridgeArea;
 
     [Header("Paramètres")]
-    public int maxSlotsPerTab = 9;  // Nombre de slots par onglet
-    public int maxVisibleTabs = 3; // Nombre d'onglets visibles
-    private List<List<IngredientData>> tabs = new List<List<IngredientData>>();
-    private int currentTab = 0;
+    [SerializeField] private int maxFridgeSlots = 12;   // Nombre maximum de slots dans le frigo
+
+    private Dictionary<GameObject, GameObject> fridgeItemSlotMapping = new Dictionary<GameObject, GameObject>();
 
     private void Awake()
     {
-        fridgeUI.SetActive(false); // Désactiver l'UI au démarrage
-    }
-
-    public void OpenFridgeUI(List<IngredientData> ingredients)
-    {
-        // Remplir les onglets
-        OrganizeTabs(ingredients);
-
-        // Afficher le premier onglet
-        ShowTab(0);
-
-        fridgeUI.SetActive(true);
-    }
-
-    public void CloseFridgeUI()
-    {
-        fridgeUI.SetActive(false);
-    }
-
-    private void OrganizeTabs(List<IngredientData> ingredients)
-    {
-        tabs.Clear();
-
-        // Créer les onglets
-        int slotCount = 0;
-        List<IngredientData> currentTabItems = new List<IngredientData>();
-        foreach (var ingredient in ingredients)
+        if (Instance == null)
         {
-            currentTabItems.Add(ingredient);
-            slotCount++;
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
 
-            if (slotCount >= maxSlotsPerTab)
+        if (fridgeArea == null)
+            Debug.LogError("La zone du frigo (fridgeArea) n'est pas assignée !");
+    }
+
+    private void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            TryHandleItemClick();
+        }
+    }
+
+    public bool IsFridgeOpen()
+    {
+        return fridgeUI.activeSelf;
+    }
+
+
+    public void AddToFridge(GameObject item)
+    {
+        if (fridgeItemSlotMapping.ContainsKey(item))
+        {
+            Debug.LogWarning($"{item.name} est déjà dans le frigo !");
+            return;
+        }
+
+        if (fridgeSlotPrefab == null || fridgeGrid == null)
+        {
+            Debug.LogError("FridgeUIManager : fridgeSlotPrefab ou fridgeGrid n'est pas assigné !");
+            return;
+        }
+
+        // Supprimez l'objet de l'inventaire
+        Inventory.Instance.RemoveFromInventory(item);
+
+        // Créer un slot pour l'objet
+        GameObject slot = Instantiate(fridgeSlotPrefab, fridgeGrid);
+
+        // Ajouter un mapping entre l'item et son slot
+        fridgeItemSlotMapping[item] = slot;
+
+        // Configurer le slot avec la texture existante
+        RawImage slotImage = slot.GetComponentInChildren<RawImage>();
+        if (slotImage != null)
+        {
+            RenderTexture renderTexture = InventoryUI.Instance.GetItemRenderTexture(item);
+            if (renderTexture != null)
             {
-                tabs.Add(new List<IngredientData>(currentTabItems));
-                currentTabItems.Clear();
-                slotCount = 0;
+                slotImage.texture = renderTexture; // Réutilise la RenderTexture existante
+                Debug.Log($"{item.name} : Texture existante appliquée.");
+            }
+            else
+            {
+                Debug.LogWarning($"AddToFridge : Pas de texture trouvée pour {item.name} !");
             }
         }
 
-        if (currentTabItems.Count > 0)
-        {
-            tabs.Add(currentTabItems);
-        }
-
-        // Créer les boutons d'onglet
-        foreach (Transform child in tabParent)
-        {
-            Destroy(child.gameObject);
-        }
-
-        for (int i = 0; i < tabs.Count; i++)
-        {
-            GameObject tabButton = Instantiate(tabButtonPrefab, tabParent);
-            tabButton.GetComponentInChildren<Text>().text = $"Onglet {i + 1}";
-            int tabIndex = i;
-            tabButton.GetComponent<Button>().onClick.AddListener(() => ShowTab(tabIndex));
-        }
+        Debug.Log($"{item.name} ajouté au frigo.");
+        item.SetActive(false); // Désactiver l'objet dans la scène
     }
 
-    private void ShowTab(int tabIndex)
+    public void RemoveFromFridge(GameObject item)
     {
-        currentTab = tabIndex;
-
-        foreach (Transform child in slotGrid)
+        if (fridgeItemSlotMapping.TryGetValue(item, out GameObject slot))
         {
-            Destroy(child.gameObject);
+            if (slot != null)
+            {
+                slot.SetActive(false); // Désactiver au lieu de détruire
+            }
+
+            fridgeItemSlotMapping.Remove(item);
+            Inventory.Instance.AddToInventory(item); // Ajouter à l'inventaire
+            Debug.Log($"{item.name} retiré du frigo et ajouté à l'inventaire.");
         }
-
-        foreach (var ingredient in tabs[tabIndex])
+        else
         {
-            GameObject slot = Instantiate(slotPrefab, slotGrid);
-            slot.GetComponentInChildren<Image>().sprite = ingredient.ingredientSprite;
-            slot.GetComponent<Button>().onClick.AddListener(() => ShowIngredientDetails(ingredient));
+            Debug.LogWarning($"{item.name} n'est pas dans le frigo !");
         }
     }
 
-    private void ShowIngredientDetails(IngredientData ingredient)
+
+
+    private void ClearEventSystemTarget(GameObject target)
     {
-        descriptionText.text = ingredient.description;
-        ingredientImage.sprite = ingredient.ingredientSprite;
+        if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == target)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
     }
+
+
+
+    private void TryHandleItemClick()
+    {
+        PointerEventData pointerData = new PointerEventData(EventSystem.current)
+        {
+            position = Input.mousePosition
+        };
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        foreach (var result in results)
+        {
+            GameObject clickedObject = result.gameObject;
+
+            // Vérifiez si l'objet cliqué est valide et pas détruit
+            if (!IsValidGameObject(clickedObject))
+            {
+                Debug.LogWarning("TryHandleItemClick : Un objet cliqué est null ou détruit !");
+                continue;
+            }
+
+            // Gestion pour l'inventaire
+            if (InventoryUI.Instance != null && clickedObject.transform.IsChildOf(InventoryUI.Instance.InventoryArea))
+            {
+                GameObject item = InventoryUI.Instance.GetItemFromSlot(clickedObject);
+
+                if (item != null && !item.Equals(null)) // Vérifiez si l'item est toujours valide
+                {
+                    Inventory.Instance.RemoveFromInventory(item);
+                    AddToFridge(item); // Transférer au frigo
+                }
+                return;
+            }
+
+            // Gestion pour le frigo
+            if (clickedObject.transform.IsChildOf(fridgeGrid))
+            {
+                GameObject item = GetItemFromFridgeSlot(clickedObject);
+
+                if (item != null && !item.Equals(null)) // Vérifiez si l'item est toujours valide
+                {
+                    RemoveFromFridge(item); // Transférer à l'inventaire
+                }
+                return;
+            }
+        }
+    }
+
+    private GameObject GetItemFromFridgeSlot(GameObject slot)
+    {
+        foreach (var pair in fridgeItemSlotMapping)
+        {
+            if (pair.Value == slot)
+            {
+                return pair.Key;
+            }
+        }
+        return null;
+    }
+
+    private bool IsValidGameObject(GameObject obj)
+    {
+        return obj != null && !obj.Equals(null);
+    }
+
 }

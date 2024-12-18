@@ -43,16 +43,18 @@ public class Inventory : MonoBehaviour
 
 
 
-    public void RemoveFromInventory(GameObject item)
+public void RemoveFromInventory(GameObject item)
+{
+    if (items.Contains(item))
     {
-        if (items.Contains(item))
-        {
-            items.Remove(item);
-            InventoryUI.Instance.MoveObjectToScene(item);
-        }
-        else
-        {
-            Debug.LogWarning($"{item.name} n'est pas dans l'inventaire !");
-        }
+        items.Remove(item);
+        InventoryUI.Instance.MoveObjectToScene(item); // Centralisez la logique ici
+        Debug.Log($"{item.name} retiré de l'inventaire.");
     }
+    else
+    {
+        Debug.LogWarning($"{item.name} n'est pas dans l'inventaire !");
+    }
+}
+
 }

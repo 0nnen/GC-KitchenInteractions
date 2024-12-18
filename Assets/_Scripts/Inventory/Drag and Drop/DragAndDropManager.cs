@@ -319,7 +319,7 @@ public class DragAndDropManager : MonoBehaviour
         float newRotation = currentDoorRotation + mouseX;
 
         // Applique le clamp pour respecter les limites (positives et négatives)
-        newRotation = Mathf.Clamp(newRotation, -currentConfig.doorRotationLimit, currentConfig.doorRotationLimit);
+        newRotation = Mathf.Clamp(newRotation, 0, currentConfig.doorRotationLimit);
 
         // Applique la rotation en fonction de l'axe sélectionné
         if (currentConfig.rotateDoorOnX)
@@ -334,10 +334,6 @@ public class DragAndDropManager : MonoBehaviour
         // Met à jour la valeur de la rotation actuelle
         currentDoorRotation = newRotation;
     }
-
-
-
-
 
     private void StopDragging()
     {

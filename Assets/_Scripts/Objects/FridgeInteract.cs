@@ -33,6 +33,7 @@ public class FridgeInteract : MonoBehaviour
     {
         float distanceToPlayer = Vector3.Distance(playerTransform.position, transform.position);
 
+        // Si le joueur est dans le rayon d'interaction
         if (distanceToPlayer <= interactionRange)
         {
             if (!isPlayerInRange)
@@ -48,13 +49,21 @@ public class FridgeInteract : MonoBehaviour
         }
         else
         {
+            // Si le joueur est hors de portée
             if (isPlayerInRange)
             {
                 isPlayerInRange = false;
                 HideInteractionMessage();
             }
+
+            // Fermer l'interface si elle est ouverte
+            if (isFridgeOpen)
+            {
+                ToggleFridgeUI();
+            }
         }
     }
+
 
     private void ShowInteractionMessage(string message)
     {

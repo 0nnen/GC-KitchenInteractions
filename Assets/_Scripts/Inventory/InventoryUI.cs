@@ -12,9 +12,14 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private GameObject inventorySlotPrefab; // Prefab d'un slot
     [SerializeField] private Camera inventoryCamera; // Caméra dédiée pour les previews
     [SerializeField] private RectTransform inventoryArea; // Zone de l'inventaire
+
+    public Camera InventoryCamera => inventoryCamera;
     public RectTransform InventoryArea => inventoryArea;
 
     private Dictionary<GameObject, GameObject> itemSlotMapping = new Dictionary<GameObject, GameObject>();
+    private Dictionary<GameObject, RenderTexture> itemTextures = new Dictionary<GameObject, RenderTexture>();
+
+
     private int maxInventorySize = 9;
 
     private void Awake()
@@ -52,8 +57,20 @@ public class InventoryUI : MonoBehaviour
 
         GameObject slot = Instantiate(inventorySlotPrefab, inventoryGrid);
 
-        RenderTexture renderTexture = CreateRenderTexture(item);
+        RenderTexture renderTexture;
 
+        // Vérifiez si la texture existe déjà
+        if (itemTextures.ContainsKey(item))
+        {
+            renderTexture = itemTextures[item];
+        }
+        else
+        {
+            renderTexture = CreateRenderTexture(item);
+            itemTextures[item] = renderTexture; // Stockez la texture pour réutilisation
+        }
+
+        // Appliquez la texture au slot
         RawImage slotImage = slot.GetComponentInChildren<RawImage>();
         if (slotImage != null)
         {
@@ -61,11 +78,19 @@ public class InventoryUI : MonoBehaviour
         }
 
         itemSlotMapping[item] = slot;
-
         Debug.Log($"{item.name} ajouté à l'inventaire.");
 
         item.SetActive(false);
     }
+
+    private void ClearEventSystemTarget(GameObject target)
+    {
+        if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == target)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
+    }
+
 
     public void MoveObjectToScene(GameObject item)
     {
@@ -73,9 +98,10 @@ public class InventoryUI : MonoBehaviour
         {
             GameObject slot = itemSlotMapping[item];
 
-            // Désactiver le slot et nettoyer la référence
+            // Désactiver le slot et nettoyer la référence dans l'EventSystem
             if (slot != null)
             {
+                ClearEventSystemTarget(slot); // Nettoyage de l'EventSystem
                 slot.SetActive(false);
                 Destroy(slot, 0.1f); // Détruire avec un léger délai
             }
@@ -91,15 +117,12 @@ public class InventoryUI : MonoBehaviour
                 Camera mainCam = Camera.main;
                 if (mainCam != null)
                 {
-                    item.transform.position = mainCam.transform.position + mainCam.transform.forward * 1.1f;
+                    item.transform.position = mainCam.transform.position + mainCam.transform.forward * 1.05f;
                     item.transform.rotation = Quaternion.identity;
                 }
 
                 Debug.Log($"{item.name} retiré de l'inventaire et replacé dans la scène.");
             }
-
-            // Réinitialiser l'EventSystem pour éviter les erreurs
-            EventSystem.current.SetSelectedGameObject(null);
         }
         else
         {
@@ -126,6 +149,31 @@ public class InventoryUI : MonoBehaviour
         return renderTexture;
     }
 
+    public RenderTexture GetItemRenderTexture(GameObject item)
+    {
+        if (itemTextures.TryGetValue(item, out RenderTexture renderTexture))
+        {
+            return renderTexture; // Retourne la RenderTexture existante
+        }
+
+        Debug.LogWarning($"GetItemRenderTexture : Aucune texture trouvée pour {item.name}");
+        return null;
+    }
+
+
+    public GameObject GetItemFromSlot(GameObject slot)
+    {
+        foreach (var pair in itemSlotMapping)
+        {
+            if (pair.Value == slot)
+            {
+                return pair.Key;
+            }
+        }
+
+        return null;
+    }
+
     private void TryRemoveItemFromInventory()
     {
         PointerEventData pointerData = new PointerEventData(EventSystem.current)
@@ -138,38 +186,33 @@ public class InventoryUI : MonoBehaviour
 
         foreach (var result in results)
         {
-            if (result.gameObject.transform.IsChildOf(inventoryGrid))
+            GameObject slot = result.gameObject;
+
+            // Vérifiez si le slot appartient à l'inventaire
+            if (slot.transform.IsChildOf(inventoryGrid))
             {
-                GameObject slot = result.gameObject;
+                ClearEventSystemTarget(slot); // Nettoyer l'EventSystem
                 GameObject item = GetItemFromSlot(slot);
 
                 if (item != null)
                 {
-                    Inventory.Instance.RemoveFromInventory(item);
-                    Debug.Log($"{item.name} retiré de l'inventaire.");
+                    if (FridgeUIManager.Instance != null && FridgeUIManager.Instance.IsFridgeOpen())
+                    {
+                        FridgeUIManager.Instance.AddToFridge(item);
+                        Inventory.Instance.RemoveFromInventory(item);
+                        Debug.Log($"{item.name} transféré vers le frigo.");
+                    }
+                    else
+                    {
+                        Inventory.Instance.RemoveFromInventory(item);
+                        Debug.Log($"{item.name} retiré de l'inventaire et placé dans la scène.");
+                    }
                 }
-                else
-                {
-                    Debug.LogWarning($"Aucun objet trouvé pour le slot {slot.name}.");
-                }
-
                 break;
             }
         }
     }
 
-    private GameObject GetItemFromSlot(GameObject slot)
-    {
-        foreach (var pair in itemSlotMapping)
-        {
-            if (pair.Value == slot)
-            {
-                return pair.Key;
-            }
-        }
-
-        return null;
-    }
 
     public bool IsPointerOverInventoryArea()
     {
@@ -193,6 +236,11 @@ public class InventoryUI : MonoBehaviour
         }
 
         return false;
+    }
+
+    private bool IsValidSlot(GameObject slot)
+    {
+        return slot != null && !slot.Equals(null);
     }
 
 }
