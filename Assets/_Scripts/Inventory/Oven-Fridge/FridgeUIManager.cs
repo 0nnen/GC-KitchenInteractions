@@ -15,7 +15,7 @@ public class FridgeUIManager : MonoBehaviour
     public RectTransform FridgeArea => fridgeArea;
 
     [Header("Paramètres")]
-    [SerializeField] private int maxFridgeSlots = 12;   // Nombre maximum de slots dans le frigo
+    [SerializeField] private int maxFridgeSlots = 9;   // Nombre maximum de slots dans le frigo
 
     private Dictionary<GameObject, GameObject> fridgeItemSlotMapping = new Dictionary<GameObject, GameObject>();
 
@@ -47,7 +47,6 @@ public class FridgeUIManager : MonoBehaviour
         return fridgeUI.activeSelf;
     }
 
-
     public void AddToFridge(GameObject item)
     {
         if (fridgeItemSlotMapping.ContainsKey(item))
@@ -62,7 +61,15 @@ public class FridgeUIManager : MonoBehaviour
             return;
         }
 
-        // Supprimez l'objet de l'inventaire
+        // Récupérer la configuration de l'objet
+        ObjectConfig config = DragAndDropManager.Instance.GetConfigForPrefab(item);
+        if (config == null || config.ingredientData == null)
+        {
+            Debug.LogError($"AddToFridge : Aucun IngredientData trouvé pour {item.name} !");
+            return;
+        }
+
+        // Supprimer l'objet de l'inventaire
         Inventory.Instance.RemoveFromInventory(item);
 
         // Créer un slot pour l'objet
@@ -71,21 +78,8 @@ public class FridgeUIManager : MonoBehaviour
         // Ajouter un mapping entre l'item et son slot
         fridgeItemSlotMapping[item] = slot;
 
-        // Configurer le slot avec la texture existante
-        RawImage slotImage = slot.GetComponentInChildren<RawImage>();
-        if (slotImage != null)
-        {
-            RenderTexture renderTexture = InventoryUI.Instance.GetItemRenderTexture(item);
-            if (renderTexture != null)
-            {
-                slotImage.texture = renderTexture; // Réutilise la RenderTexture existante
-                Debug.Log($"{item.name} : Texture existante appliquée.");
-            }
-            else
-            {
-                Debug.LogWarning($"AddToFridge : Pas de texture trouvée pour {item.name} !");
-            }
-        }
+        // Configurer le slot avec les données du ScriptableObject
+        SetupSlotWithIngredientData(slot, config.ingredientData);
 
         Debug.Log($"{item.name} ajouté au frigo.");
         item.SetActive(false); // Désactiver l'objet dans la scène
@@ -109,18 +103,6 @@ public class FridgeUIManager : MonoBehaviour
             Debug.LogWarning($"{item.name} n'est pas dans le frigo !");
         }
     }
-
-
-
-    private void ClearEventSystemTarget(GameObject target)
-    {
-        if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == target)
-        {
-            EventSystem.current.SetSelectedGameObject(null);
-        }
-    }
-
-
 
     private void TryHandleItemClick()
     {
@@ -187,4 +169,16 @@ public class FridgeUIManager : MonoBehaviour
         return obj != null && !obj.Equals(null);
     }
 
+    private void SetupSlotWithIngredientData(GameObject slot, IngredientData data)
+    {
+        // Configure l'image
+        RawImage slotImage = slot.GetComponentInChildren<RawImage>();
+        if (slotImage != null && data.ingredientSprite != null)
+        {
+            slotImage.texture = data.ingredientSprite.texture;
+        }
+
+        // Configure d'autres détails si nécessaire (comme un tooltip)
+        // Exemple : Ajouter un événement de survol pour afficher le nom et la description
+    }
 }

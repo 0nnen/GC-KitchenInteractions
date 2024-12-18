@@ -6,7 +6,8 @@ using UnityEditor;
 [System.Serializable]
 public class ObjectConfig
 {
-    public GameObject prefab;                  // Prefab de l'objet
+    public GameObject prefab;                 // Prefab de l'objet
+    public IngredientData ingredientData;     // Le ScriptableObject associé
     public bool canReceiveChildren = false;   // Peut recevoir des enfants ?
     public bool hasDoor = false;              // Possède une porte ?
     public bool isMovable = true;             // L'objet est-il déplaçable ?
@@ -209,6 +210,12 @@ public class DragAndDropManager : MonoBehaviour
                 {
                     selectedObject = config.prefab;
                     currentConfig = config;
+
+                    if (currentConfig.ingredientData != null)
+                    {
+                        Debug.Log($"Début du drag pour {currentConfig.ingredientData.ingredientName}");
+                    }
+
                     dragDepth = Vector3.Distance(mainCamera.transform.position, selectedObject.transform.position);
                     StartDragging(hit.point);
                     return;

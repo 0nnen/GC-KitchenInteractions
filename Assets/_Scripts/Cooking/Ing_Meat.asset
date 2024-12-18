@@ -13,6 +13,10 @@ MonoBehaviour:
   m_Name: Ing_Meat
   m_EditorClassIdentifier: 
   ingredientName: Meat
-  ingredientSprite: {fileID: 0}
-  description: 
-  cookingTime: 0
+  ingredientSprite: {fileID: 21300000, guid: 7ab74e659e1f0a34d9cfec21c478fc12, type: 3}
+  description: "La viande est un aliment riche en prot\xE9ines, provenant principalement
+    des muscles d'animaux comme le b\u0153uf, le poulet, ou le porc. Elle peut \xEAtre
+    cuisin\xE9e de nombreuses fa\xE7ons : grill\xE9e, r\xF4tie, mijot\xE9e, ou encore
+    crue dans certaines sp\xE9cialit\xE9s. Source de fer et de nutriments essentiels,
+    elle occupe une place importante dans de nombreuses cultures culinaires."
+  cookingTime: 4.67
