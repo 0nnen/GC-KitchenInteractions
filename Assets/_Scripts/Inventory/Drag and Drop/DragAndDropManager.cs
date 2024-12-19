@@ -157,7 +157,10 @@ public class DragAndDropManager : MonoBehaviour
         {
             if (Input.GetMouseButton(1)) // Rotation avec clic droit
             {
-                RotateObject();
+                if (currentConfig != null && currentConfig.isMovable)
+                {
+                    RotateObject();
+                }
             }
             else if (currentConfig != null && currentConfig.hasDoor && currentConfig.doorTransform != null)
             {
@@ -173,6 +176,7 @@ public class DragAndDropManager : MonoBehaviour
                 StopDragging();
             }
         }
+
     }
 
 
@@ -301,10 +305,14 @@ public class DragAndDropManager : MonoBehaviour
         );
     }
 
-
-
     private void RotateObject()
     {
+        if (currentConfig == null || !currentConfig.isMovable)
+        {
+            Debug.LogWarning("Rotation non autorisée : l'objet n'est pas déplaçable.");
+            return;
+        }
+
         float mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
         float mouseY = Input.GetAxis("Mouse Y") * rotationSpeed;
 
@@ -398,6 +406,8 @@ public class DragAndDropManager : MonoBehaviour
         currentConfig = null;
         isDragging = false;
     }
+
+
 
     private void HandleHover()
     {
@@ -493,6 +503,13 @@ public class DragAndDropManager : MonoBehaviour
         Debug.Log($"{selectedObject.name} ajouté à l'inventaire.");
     }
 
+    private void CleanupDragging()
+    {
+        selectedObject = null;
+        currentConfig = null;
+        isDragging = false;
+    }
+
     private void SetOutlineColor(Color color)
     {
         if (outlineMaterial != null)
@@ -505,14 +522,26 @@ public class DragAndDropManager : MonoBehaviour
     {
         if (!showGizmos || currentConfig == null) return;
 
-        // Vérification si `currentConfig.dropZoneCollider` est nul
+        // Vérification si currentConfig.dropZoneCollider est nul
         if (currentConfig.canReceiveChildren && currentConfig.dropZoneCollider != null)
         {
             Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(currentConfig.dropZoneCollider.transform.position, overlapSphereRadius);
+            if (selectedObject != null)
+            {
+                Gizmos.DrawWireSphere(selectedObject.transform.position, overlapSphereRadius);
+            }
+
+            foreach (var config in objectConfigs)
+            {
+                if (config.canReceiveChildren && config.dropZoneCollider != null)
+                {
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawWireSphere(config.dropZoneCollider.transform.position, overlapSphereRadius);
+                }
+            }
         }
 
-        // Vérification si `currentConfig.prefab` est nul
+        // Vérification si currentConfig.prefab est nul
         if (currentConfig.prefab != null)
         {
             Gizmos.color = Color.cyan;
@@ -523,9 +552,9 @@ public class DragAndDropManager : MonoBehaviour
             }
 
             // Affiche un label uniquement si Handles est disponible (éditeur Unity)
-        #if UNITY_EDITOR
-                    Handles.Label(currentConfig.prefab.transform.position, $"Object: {currentConfig.prefab.name}");
-        #endif
+#if UNITY_EDITOR
+            Handles.Label(currentConfig.prefab.transform.position, $"Object: {currentConfig.prefab.name}");
+#endif
         }
     }
 

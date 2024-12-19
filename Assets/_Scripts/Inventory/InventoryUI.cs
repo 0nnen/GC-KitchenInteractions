@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
+using static UnityEditor.Progress;
 
 public class InventoryUI : MonoBehaviour
 {
@@ -55,11 +56,15 @@ public class InventoryUI : MonoBehaviour
             return;
         }
 
+        if (itemSlotMapping.ContainsKey(item))
+        {
+            Debug.LogWarning($"{item.name} est déjà dans l'inventaire (via le slot mapping) !");
+            return;
+        }
+
         GameObject slot = Instantiate(inventorySlotPrefab, inventoryGrid);
 
         RenderTexture renderTexture;
-
-        // Vérifiez si la texture existe déjà
         if (itemTextures.ContainsKey(item))
         {
             renderTexture = itemTextures[item];
@@ -67,10 +72,9 @@ public class InventoryUI : MonoBehaviour
         else
         {
             renderTexture = CreateRenderTexture(item);
-            itemTextures[item] = renderTexture; // Stockez la texture pour réutilisation
+            itemTextures[item] = renderTexture;
         }
 
-        // Appliquez la texture au slot
         RawImage slotImage = slot.GetComponentInChildren<RawImage>();
         if (slotImage != null)
         {
@@ -78,9 +82,8 @@ public class InventoryUI : MonoBehaviour
         }
 
         itemSlotMapping[item] = slot;
-        Debug.Log($"{item.name} ajouté à l'inventaire.");
-
         item.SetActive(false);
+        Debug.Log($"{item.name} ajouté à l'inventaire (UI).");
     }
 
     private void ClearEventSystemTarget(GameObject target)
@@ -241,6 +244,11 @@ public class InventoryUI : MonoBehaviour
     private bool IsValidSlot(GameObject slot)
     {
         return slot != null && !slot.Equals(null);
+    }
+
+    public bool IsItemInUI(GameObject item)
+    {
+        return itemSlotMapping.ContainsKey(item);
     }
 
 }

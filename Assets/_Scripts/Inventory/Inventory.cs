@@ -18,9 +18,9 @@ public class Inventory : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
     public void AddToInventory(GameObject item)
     {
-        // Rechercher le ObjectConfig correspondant à l'item dans la liste
         ObjectConfig config = DragAndDropManager.Instance.GetConfigForPrefab(item);
 
         if (config != null && !config.isMovable)
@@ -29,6 +29,14 @@ public class Inventory : MonoBehaviour
             return;
         }
 
+        // Vérifiez si l'objet est déjà dans InventoryUI
+        if (InventoryUI.Instance.IsItemInUI(item))
+        {
+            Debug.LogWarning($"{item.name} est déjà dans l'inventaire (via l'UI).");
+            return;
+        }
+
+        // Ajoutez l'objet dans la liste et l'UI
         if (!items.Contains(item))
         {
             items.Add(item);
@@ -41,20 +49,22 @@ public class Inventory : MonoBehaviour
         }
     }
 
-
-
-public void RemoveFromInventory(GameObject item)
-{
-    if (items.Contains(item))
+    public void RemoveFromInventory(GameObject item)
     {
-        items.Remove(item);
-        InventoryUI.Instance.MoveObjectToScene(item); // Centralisez la logique ici
-        Debug.Log($"{item.name} retiré de l'inventaire.");
+        if (items.Contains(item))
+        {
+            items.Remove(item);
+            InventoryUI.Instance.MoveObjectToScene(item);
+            Debug.Log($"{item.name} retiré de l'inventaire.");
+        }
+        else
+        {
+            Debug.LogWarning($"{item.name} n'est pas dans l'inventaire !");
+        }
     }
-    else
-    {
-        Debug.LogWarning($"{item.name} n'est pas dans l'inventaire !");
-    }
-}
 
+    public bool IsInInventory(GameObject item)
+    {
+        return items.Contains(item);
+    }
 }
