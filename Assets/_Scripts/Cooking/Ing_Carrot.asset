@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 58dc8cb7c154d2b4b86bf79ab177f858, type: 3}
-  m_Name: Ing_Plate
+  m_Name: Ing_Carrot
   m_EditorClassIdentifier: 
-  ingredientName: Plate
-  ingredientSprite: {fileID: 21300000, guid: 7ab74e659e1f0a34d9cfec21c478fc12, type: 3}
-  description: A simple yet essential item to serve and enjoy your dishes.
-  cookingTime: 0
+  ingredientName: Carrot
+  ingredientSprite: {fileID: 21300000, guid: 61dae29f28ea3f54c8c281e5af316f17, type: 3}
+  description: A crunchy, sweet root perfect for soups and healthy snacks.
+  cookingTime: 5.38

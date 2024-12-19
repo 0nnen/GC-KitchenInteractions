@@ -4,21 +4,15 @@ using UnityEngine;
 [CustomPropertyDrawer(typeof(ObjectConfig))]
 public class ObjectConfigDrawer : PropertyDrawer
 {
-    private static readonly float LineHeight = EditorGUIUtility.singleLineHeight; // Hauteur d'une ligne standard
-    private const float VerticalSpacing = 4f; // Espace supplémentaire entre les lignes
+    private static readonly float LineHeight = EditorGUIUtility.singleLineHeight;
+    private const float VerticalSpacing = 4f;
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         EditorGUI.BeginProperty(position, label, property);
 
-        // Indentation pour organiser les champs
-        var indent = EditorGUI.indentLevel;
-        EditorGUI.indentLevel = 1;
-
-        // Calcul de la position des lignes
+        // Initialisation
         Rect currentRect = new Rect(position.x, position.y, position.width, LineHeight);
-
-        // Accéder aux propriétés enfant
         var prefabProp = property.FindPropertyRelative("prefab");
         var ingredientDataProp = property.FindPropertyRelative("ingredientData");
         var canReceiveChildrenProp = property.FindPropertyRelative("canReceiveChildren");
@@ -31,80 +25,64 @@ public class ObjectConfigDrawer : PropertyDrawer
         var invertDoorRotationProp = property.FindPropertyRelative("invertDoorRotation");
         var doorRotationLimitProp = property.FindPropertyRelative("doorRotationLimit");
 
-        // Dessiner les champs
-        // 1. Prefab
-        EditorGUI.PropertyField(currentRect, prefabProp);
+        // Dessiner les champs principaux
+        EditorGUI.PropertyField(currentRect, prefabProp, new GUIContent("Prefab"));
         currentRect.y += LineHeight + VerticalSpacing;
 
-        // 2. IngredientData
-        EditorGUI.PropertyField(currentRect, ingredientDataProp);
+        EditorGUI.PropertyField(currentRect, ingredientDataProp, new GUIContent("Ingredient Data"));
         currentRect.y += LineHeight + VerticalSpacing;
 
-        // 3. Paramètre "isMovable"
-        EditorGUI.PropertyField(currentRect, isMovableProp);
+        EditorGUI.PropertyField(currentRect, isMovableProp, new GUIContent("Is Movable"));
         currentRect.y += LineHeight + VerticalSpacing;
 
-        // 4. Paramètre "canReceiveChildren"
-        EditorGUI.PropertyField(currentRect, canReceiveChildrenProp);
+        // Champs conditionnels : CanReceiveChildren
+        EditorGUI.PropertyField(currentRect, canReceiveChildrenProp, new GUIContent("Can Receive Children"));
         currentRect.y += LineHeight + VerticalSpacing;
 
         if (canReceiveChildrenProp.boolValue)
         {
-            EditorGUI.indentLevel = indent;
-            // Afficher le champ "dropZoneCollider" uniquement si "canReceiveChildren" est activé
-            EditorGUI.PropertyField(currentRect, dropZoneColliderProp);
+            EditorGUI.indentLevel++;
+            EditorGUI.PropertyField(currentRect, dropZoneColliderProp, new GUIContent("Drop Zone Collider"));
             currentRect.y += LineHeight + VerticalSpacing;
+            EditorGUI.indentLevel--;
         }
 
-        // 5. Paramètre "hasDoor"
-        EditorGUI.PropertyField(currentRect, hasDoorProp);
+        // Champs conditionnels : HasDoor
+        EditorGUI.PropertyField(currentRect, hasDoorProp, new GUIContent("Has Door"));
         currentRect.y += LineHeight + VerticalSpacing;
 
         if (hasDoorProp.boolValue)
         {
-            EditorGUI.indentLevel = indent;
-            // Afficher les paramètres liés à la porte si "hasDoor" est activé
-            EditorGUI.PropertyField(currentRect, doorTransformProp);
+            EditorGUI.indentLevel++;
+            EditorGUI.PropertyField(currentRect, doorTransformProp, new GUIContent("Door Transform"));
             currentRect.y += LineHeight + VerticalSpacing;
 
-            EditorGUI.PropertyField(currentRect, rotateDoorOnXProp);
+            EditorGUI.PropertyField(currentRect, rotateDoorOnXProp, new GUIContent("Rotate Door on X"));
             currentRect.y += LineHeight + VerticalSpacing;
 
-            EditorGUI.PropertyField(currentRect, rotateDoorOnYProp);
+            EditorGUI.PropertyField(currentRect, rotateDoorOnYProp, new GUIContent("Rotate Door on Y"));
             currentRect.y += LineHeight + VerticalSpacing;
 
-            EditorGUI.PropertyField(currentRect, invertDoorRotationProp);
+            EditorGUI.PropertyField(currentRect, invertDoorRotationProp, new GUIContent("Invert Door Rotation"));
             currentRect.y += LineHeight + VerticalSpacing;
 
-            EditorGUI.PropertyField(currentRect, doorRotationLimitProp);
+            EditorGUI.PropertyField(currentRect, doorRotationLimitProp, new GUIContent("Door Rotation Limit"));
             currentRect.y += LineHeight + VerticalSpacing;
+            EditorGUI.indentLevel--;
         }
-
-        // Réinitialiser l'indentation
-        EditorGUI.indentLevel = indent;
 
         EditorGUI.EndProperty();
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        // Calculez dynamiquement la hauteur totale
-        float totalHeight = LineHeight + VerticalSpacing; // Pour le prefab
-        totalHeight += LineHeight + VerticalSpacing;      // Pour isMovable
-        totalHeight += LineHeight + VerticalSpacing;      // Pour canReceiveChildren
-
+        float height = LineHeight + VerticalSpacing * 30; // Base fields
         if (property.FindPropertyRelative("canReceiveChildren").boolValue)
-        {
-            totalHeight += LineHeight + VerticalSpacing; // Pour dropZoneCollider
-        }
-
-        totalHeight += LineHeight + VerticalSpacing;      // Pour hasDoor
+            height += LineHeight + VerticalSpacing;
 
         if (property.FindPropertyRelative("hasDoor").boolValue)
-        {
-            totalHeight += LineHeight + VerticalSpacing * 15; // Pour les paramètres de porte
-        }
+            height += (LineHeight + VerticalSpacing) * 5;
 
-        return totalHeight + 60;
+        return height;
     }
 }

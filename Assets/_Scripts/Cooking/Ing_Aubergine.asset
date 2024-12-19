@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 58dc8cb7c154d2b4b86bf79ab177f858, type: 3}
-  m_Name: Ing_Plate
+  m_Name: Ing_Aubergine
   m_EditorClassIdentifier: 
-  ingredientName: Plate
-  ingredientSprite: {fileID: 21300000, guid: 7ab74e659e1f0a34d9cfec21c478fc12, type: 3}
-  description: A simple yet essential item to serve and enjoy your dishes.
-  cookingTime: 0
+  ingredientName: Aubergine
+  ingredientSprite: {fileID: 21300000, guid: 76c5a1f473e1cd64abd2bc691a8c9bed, type: 3}
+  description: A tender and versatile vegetable, perfect for grilling or casseroles.
+  cookingTime: 8.55

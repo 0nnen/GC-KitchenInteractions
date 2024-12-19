@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections;
+using System.Linq;
 
 public class FridgeUIManager : MonoBehaviour
 {
@@ -42,6 +43,8 @@ public class FridgeUIManager : MonoBehaviour
     private List<Button> tabButtons = new List<Button>();   // Liste des boutons pour gérer leur état
     private Vector2 basePosition;                           // Position de base du premier message
     private List<TMP_Text> activeErrorMessages = new List<TMP_Text>(); // Liste des messages actifs
+    private bool isErrorMessageDisplayed = false;
+
 
     private void Awake()
     {
@@ -97,18 +100,31 @@ public class FridgeUIManager : MonoBehaviour
             return;
         }
 
-        // Vérification stricte avant d'ajouter l'objet
-        if (tabs.Count == 3 && tabs[activeTabIndex].Count >= maxItemsPerTab)
+        // Rediriger automatiquement vers le prochain onglet disponible
+        for (int i = activeTabIndex; i < tabs.Count; i++)
         {
-            if (errorText != null)
+            if (tabs[i].Count < maxItemsPerTab)
             {
-                StartCoroutine(FadeInAndOut("Tous les onglets sont pleins."));
+                AddItemToTab(item, i);
+                return;
             }
-            Debug.LogWarning("Impossible d'ajouter l'objet : onglet actif plein et aucun nouvel onglet ne peut être créé.");
+        }
+
+        // Si aucun onglet n'a de place, créer un nouvel onglet
+        if (tabs.Count < 3)
+        {
+            CreateNewTab();
+            AddItemToTab(item, tabs.Count - 1);
             return;
         }
 
+        // Si tous les onglets sont pleins, afficher une erreur
+        ShowErrorMessage("Tous les onglets sont pleins.");
+        Debug.LogWarning($"Impossible d'ajouter {item.name} : tous les onglets sont pleins.");
+    }
 
+    private void AddItemToTab(GameObject item, int tabIndex)
+    {
         // Supprimer l'objet de l'inventaire
         Inventory.Instance.RemoveFromInventory(item);
 
@@ -117,48 +133,32 @@ public class FridgeUIManager : MonoBehaviour
         fridgeItemSlotMapping[item] = slot;
 
         // Configurer le slot avec les données du ScriptableObject
-        SetupSlotWithIngredientData(slot, config.ingredientData);
-        AddHoverHandlers(slot, config.ingredientData);
+        ObjectConfig config = DragAndDropManager.Instance.GetConfigForPrefab(item);
+        if (config != null && config.ingredientData != null)
+        {
+            SetupSlotWithIngredientData(slot, config.ingredientData);
+            AddHoverHandlers(slot, config.ingredientData);
+        }
 
-        // Ajouter l'objet à l'onglet actif ou suivant
-        AddItemToTab(slot);
+        // Ajouter l'objet à l'onglet spécifié
+        tabs[tabIndex].Add(slot);
 
-        Debug.Log($"{item.name} ajouté au frigo.");
+        // Rafraîchir uniquement si l'onglet actif est mis à jour
+        if (tabIndex == activeTabIndex)
+        {
+            RefreshTabDisplay();
+        }
+
+        Debug.Log($"{item.name} ajouté au frigo dans l'onglet {tabIndex + 1}.");
         item.SetActive(false); // Désactiver l'objet dans la scène
     }
 
-
-    private void AddItemToTab(GameObject slot)
-    {
-        // Vérifier si l'onglet actif est plein
-        if (tabs.Count > 0 && tabs[activeTabIndex].Count >= maxItemsPerTab)
-        {
-            // Si le maximum d'onglets est atteint, refuser l'ajout
-            if (tabs.Count >= 3)
-            {
-                Debug.LogWarning("Impossible d'ajouter : tous les onglets sont pleins.");
-                Destroy(slot); // Nettoyer le slot inutilisable
-                ShowErrorMessage("Tous les onglets sont pleins.");
-                return;
-            }
-
-            // Créer un nouvel onglet si possible
-            CreateNewTab();
-        }
-
-        // Ajouter l'objet à l'onglet actif
-        tabs[activeTabIndex].Add(slot);
-
-        // Rafraîchir l'affichage pour montrer uniquement l'onglet actif
-        RefreshTabDisplay();
-    }
-
-
     private void CreateNewTab()
     {
+        UpdateTabButtonAppearance();
         if (tabs.Count >= 3)
         {
-            Debug.LogWarning("Nombre maximum d'onglet atteint.");
+            Debug.LogWarning("Nombre maximum d'onglets atteint.");
             return;
         }
 
@@ -175,8 +175,8 @@ public class FridgeUIManager : MonoBehaviour
 
         // Mettre à jour les boutons d'onglet
         UpdateTabButtonAppearance();
+        Debug.Log($"Nouvel onglet {newTabIndex + 1} créé.");
     }
-
 
     private void SwitchTab(int tabIndex)
     {
@@ -396,78 +396,48 @@ public class FridgeUIManager : MonoBehaviour
 
     public void ShowErrorMessage(string message)
     {
-        if (errorText == null || errorCanvasGroup == null) return;
+        if (!IsFridgeOpen()) return; // Ignore si le frigo est fermé
+        if (isErrorMessageDisplayed) return; // Ignore si un message est déjà affiché
 
-        errorText.text = message; // Mettre à jour le texte
-        StartCoroutine(FadeInAndOut("Impossible d'ajouter : tous les onglets sont pleins."));
-    }
-    private IEnumerator FadeInAndOut(string message)
-    {
-        // Crée un nouveau texte d'erreur
-        TMP_Text newErrorText = Instantiate(errorText, errorText.transform.parent);
-        newErrorText.text = message;
-        newErrorText.gameObject.SetActive(true);
+        isErrorMessageDisplayed = true; // Indique qu'un message est affiché
+        errorText.text = message; // Met à jour le texte de l'erreur
+        errorText.gameObject.SetActive(true);
 
-        // Ajouter à la liste des messages actifs
-        activeErrorMessages.Add(newErrorText);
-
-        // Calculer la position initiale basée sur les messages actifs
-        Vector2 startPos = basePosition + new Vector2(0, -50 * activeErrorMessages.Count); // Décalage vers le bas
-        Vector2 endPos = startPos + new Vector2(0, 50); // Monte légèrement vers sa position finale
-
-        // Réinitialiser l'alpha et la position avant de commencer
-        CanvasGroup newCanvasGroup = newErrorText.GetComponent<CanvasGroup>();
-        if (newCanvasGroup == null)
+        if (errorCanvasGroup != null)
         {
-            newCanvasGroup = newErrorText.gameObject.AddComponent<CanvasGroup>();
+            StartCoroutine(FadeInAndOut());
         }
+    }
 
-        newCanvasGroup.alpha = 0f;
-        newErrorText.rectTransform.anchoredPosition = startPos;
 
-        // Apparition (Fade-In + Déplacement)
+    private IEnumerator FadeInAndOut()
+    {
+        // Apparition (Fade-In)
         float timer = 0f;
         while (timer < fadeDuration)
         {
             timer += Time.deltaTime;
-            float t = Mathf.Clamp01(timer / fadeDuration); // Normalise entre 0 et 1
-            float easedT = EaseOutElastic(t);             // Applique la fonction easing
-
-            // Met à jour la position et l'alpha
-            newErrorText.rectTransform.anchoredPosition = Vector2.Lerp(startPos, endPos, easedT);
-            newCanvasGroup.alpha = easedT;
-
+            errorCanvasGroup.alpha = Mathf.Lerp(0f, 1f, timer / fadeDuration);
             yield return null;
         }
 
-        // Assurer que le texte est bien positionné et visible
-        newErrorText.rectTransform.anchoredPosition = endPos;
-        newCanvasGroup.alpha = 1f;
-
-        // Attendre le temps d'affichage
+        // Temps d'affichage
         yield return new WaitForSeconds(displayTime);
 
-        // Disparition (Fade-Out + Déplacement inverse)
+        // Disparition (Fade-Out)
         timer = 0f;
         while (timer < fadeDuration)
         {
             timer += Time.deltaTime;
-            float t = Mathf.Clamp01(timer / fadeDuration); // Normalise entre 0 et 1
-            float easedT = EaseInOutExpo(1f - t);          // Utilise le easing précédent pour disparaître
-
-            // Met à jour l'alpha
-            newCanvasGroup.alpha = easedT;
-
+            errorCanvasGroup.alpha = Mathf.Lerp(1f, 0f, timer / fadeDuration);
             yield return null;
         }
 
-        // Supprimer le message de la liste et détruire l'objet
-        activeErrorMessages.Remove(newErrorText);
-        Destroy(newErrorText.gameObject);
-
-        // Réorganiser les positions des messages restants
-        RepositionErrorMessages();
+        // Désactive le texte d'erreur et réinitialise le booléen
+        errorText.gameObject.SetActive(false);
+        isErrorMessageDisplayed = false;
     }
+
     private void RepositionErrorMessages()
     {
         for (int i = 0; i < activeErrorMessages.Count; i++)
@@ -477,6 +447,21 @@ public class FridgeUIManager : MonoBehaviour
             errorText.rectTransform.anchoredPosition = newPosition;
         }
     }
+
+    private void ResetErrorMessage()
+    {
+        StopAllCoroutines(); // Arrête toutes les animations en cours (FadeIn/FadeOut)
+        if (errorCanvasGroup != null)
+        {
+            errorCanvasGroup.alpha = 0f; // Réinitialise l'alpha
+        }
+        if (errorText != null)
+        {
+            errorText.gameObject.SetActive(false); // Cache le texte
+        }
+        isErrorMessageDisplayed = false; // Réinitialise l'indicateur
+    }
+
 
     private float EaseInOutExpo(float x)
     {

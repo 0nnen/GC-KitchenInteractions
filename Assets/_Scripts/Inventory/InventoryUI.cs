@@ -120,7 +120,7 @@ public class InventoryUI : MonoBehaviour
                 Camera mainCam = Camera.main;
                 if (mainCam != null)
                 {
-                    item.transform.position = mainCam.transform.position + mainCam.transform.forward * 1.05f;
+                    item.transform.position = mainCam.transform.position + mainCam.transform.forward * 0.1f;
                     item.transform.rotation = Quaternion.identity;
                 }
 

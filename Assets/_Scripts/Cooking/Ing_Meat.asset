@@ -14,7 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ingredientName: Raw Steak
   ingredientSprite: {fileID: 21300000, guid: a335ab1976f86d743937768bcbdfdda2, type: 3}
-  description: "La viande est un aliment riche en prot\xE9ines. Elle peut \xEAtre
-    cuisin\xE9e de nombreuses fa\xE7ons : grill\xE9e, r\xF4tie, mijot\xE9e, ou encore
-    crue dans certaines sp\xE9cialit\xE9s."
+  description: A rich and savory protein, perfect for hearty meals and barbecues.
   cookingTime: 4.67
