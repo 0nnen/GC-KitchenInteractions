@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
+using static UnityEditor.Progress;
 
 public class InventoryUI : MonoBehaviour
 {
@@ -12,10 +13,15 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private GameObject inventorySlotPrefab; // Prefab d'un slot
     [SerializeField] private Camera inventoryCamera; // Caméra dédiée pour les previews
     [SerializeField] private RectTransform inventoryArea; // Zone de l'inventaire
-    private int maxInventorySize = 9; // Taille maximale de l'inventaire
 
-    private Dictionary<GameObject, RenderTexture> renderTextures = new Dictionary<GameObject, RenderTexture>();
-    private GameObject draggedItem = null; // Référence à l'objet en cours de drag
+    public Camera InventoryCamera => inventoryCamera;
+    public RectTransform InventoryArea => inventoryArea;
+
+    private Dictionary<GameObject, GameObject> itemSlotMapping = new Dictionary<GameObject, GameObject>();
+    private Dictionary<GameObject, RenderTexture> itemTextures = new Dictionary<GameObject, RenderTexture>();
+
+
+    private int maxInventorySize = 9;
 
     private void Awake()
     {
@@ -29,13 +35,16 @@ public class InventoryUI : MonoBehaviour
         }
 
         if (inventoryCamera == null)
-        {
             Debug.LogError("La caméra d'inventaire n'est pas assignée !");
-        }
-
         if (inventoryArea == null)
-        {
             Debug.LogError("La zone de l'inventaire (inventoryArea) n'est pas assignée !");
+    }
+
+    private void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            TryRemoveItemFromInventory();
         }
     }
 
@@ -47,179 +56,199 @@ public class InventoryUI : MonoBehaviour
             return;
         }
 
-        // Créer un slot
+        if (itemSlotMapping.ContainsKey(item))
+        {
+            Debug.LogWarning($"{item.name} est déjà dans l'inventaire (via le slot mapping) !");
+            return;
+        }
+
         GameObject slot = Instantiate(inventorySlotPrefab, inventoryGrid);
 
-        // Capturer l'aperçu de l'objet
-        RenderTexture renderTexture = CreateRenderTexture(item);
+        RenderTexture renderTexture;
+        if (itemTextures.ContainsKey(item))
+        {
+            renderTexture = itemTextures[item];
+        }
+        else
+        {
+            renderTexture = CreateRenderTexture(item);
+            itemTextures[item] = renderTexture;
+        }
 
-        // Associer la Render Texture au RawImage du slot
         RawImage slotImage = slot.GetComponentInChildren<RawImage>();
         if (slotImage != null)
         {
             slotImage.texture = renderTexture;
         }
 
-        // Ajouter des événements de drag-and-drop
-        AddDragAndDropEvents(slot, item);
-
-        // Désactiver l'objet après capture
+        itemSlotMapping[item] = slot;
         item.SetActive(false);
-
-        Debug.Log($"{item.name} ajouté à l'inventaire avec aperçu.");
+        Debug.Log($"{item.name} ajouté à l'inventaire (UI).");
     }
+
+    private void ClearEventSystemTarget(GameObject target)
+    {
+        if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == target)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
+    }
+
+
+    public void MoveObjectToScene(GameObject item)
+    {
+        if (itemSlotMapping.ContainsKey(item))
+        {
+            GameObject slot = itemSlotMapping[item];
+
+            // Désactiver le slot et nettoyer la référence dans l'EventSystem
+            if (slot != null)
+            {
+                ClearEventSystemTarget(slot); // Nettoyage de l'EventSystem
+                slot.SetActive(false);
+                Destroy(slot, 0.1f); // Détruire avec un léger délai
+            }
+            itemSlotMapping.Remove(item);
+
+            // Réactiver l'objet dans la scène
+            if (item != null)
+            {
+                item.SetActive(true);
+                item.transform.SetParent(null);
+
+                // Positionner l'objet devant la caméra
+                Camera mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    item.transform.position = mainCam.transform.position + mainCam.transform.forward * 1.05f;
+                    item.transform.rotation = Quaternion.identity;
+                }
+
+                Debug.Log($"{item.name} retiré de l'inventaire et replacé dans la scène.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"{item.name} n'a pas de slot associé dans l'inventaire !");
+        }
+    }
+
 
     private RenderTexture CreateRenderTexture(GameObject item)
     {
         RenderTexture renderTexture = new RenderTexture(256, 256, 16);
         renderTexture.Create();
 
-        // Configurer la caméra pour capturer l'objet
         inventoryCamera.targetTexture = renderTexture;
 
-        // Positionner la caméra face à l'objet
         Bounds bounds = item.GetComponent<Renderer>().bounds;
         inventoryCamera.transform.position = bounds.center + Vector3.back * bounds.size.z * 2 + Vector3.up * bounds.size.y;
         inventoryCamera.transform.LookAt(bounds.center);
 
-        // Effectuer le rendu
         inventoryCamera.Render();
 
-        // Libérer la caméra de la Render Texture
         inventoryCamera.targetTexture = null;
-
-        // Sauvegarder la Render Texture
-        renderTextures[item] = renderTexture;
 
         return renderTexture;
     }
 
-    private void AddDragAndDropEvents(GameObject slot, GameObject item)
+    public RenderTexture GetItemRenderTexture(GameObject item)
     {
-        EventTrigger trigger = slot.AddComponent<EventTrigger>();
-
-        // Début du drag
-        EventTrigger.Entry dragStart = new EventTrigger.Entry { eventID = EventTriggerType.BeginDrag };
-        dragStart.callback.AddListener((data) => OnBeginDrag(item, slot));
-        trigger.triggers.Add(dragStart);
-
-        // Fin du drag
-        EventTrigger.Entry dragEnd = new EventTrigger.Entry { eventID = EventTriggerType.EndDrag };
-        dragEnd.callback.AddListener((data) => OnEndDrag(item, slot));
-        trigger.triggers.Add(dragEnd);
-    }
-
-    private void OnBeginDrag(GameObject item, GameObject slot)
-    {
-        // Activer immédiatement l'objet pour le drag
-        draggedItem = item;
-        draggedItem.SetActive(true);
-
-        // Positionner devant la caméra principale pour éviter les téléportations
-        PlaceObjectInFrontOfPlayer(draggedItem);
-
-        Debug.Log($"Début du drag de {draggedItem.name}");
-    }
-
-    private void OnEndDrag(GameObject item, GameObject slot)
-    {
-        if (IsPointerOverInventoryArea())
+        if (itemTextures.TryGetValue(item, out RenderTexture renderTexture))
         {
-            // Si l'objet est relâché dans la zone d'inventaire
-            Debug.Log($"{item.name} relâché dans la zone d'inventaire.");
+            return renderTexture; // Retourne la RenderTexture existante
+        }
 
-            // Vérifier si l'inventaire est plein
-            if (inventoryGrid.childCount >= maxInventorySize)
-            {
-                Debug.LogWarning("Inventaire plein ! L'objet n'a pas été ajouté.");
-                draggedItem = null;
-                return;
-            }
+        Debug.LogWarning($"GetItemRenderTexture : Aucune texture trouvée pour {item.name}");
+        return null;
+    }
 
-            // Ajouter un nouveau slot si l'objet n'est pas déjà dans l'inventaire
-            if (!IsItemAlreadyInInventory(item))
+
+    public GameObject GetItemFromSlot(GameObject slot)
+    {
+        foreach (var pair in itemSlotMapping)
+        {
+            if (pair.Value == slot)
             {
-                AddToInventory(item);
+                return pair.Key;
             }
         }
-        else
-        {
-            // Retirer l'objet de l'inventaire et le laisser suivre la souris
-            Inventory.Instance.RemoveFromInventory(item);
-            Destroy(slot);
 
-            Debug.Log($"{item.name} relâché dans la scène.");
-        }
-
-        draggedItem = null;
+        return null;
     }
 
-    private void Update()
+    private void TryRemoveItemFromInventory()
     {
-        // Si un objet est en cours de drag, le déplacer avec la souris
-        if (draggedItem != null)
+        PointerEventData pointerData = new PointerEventData(EventSystem.current)
         {
-            FollowMousePosition(draggedItem);
-        }
-    }
+            position = Input.mousePosition
+        };
 
-    private void FollowMousePosition(GameObject item)
-    {
-        // Convertir la position de la souris en coordonnées du monde
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
-        {
-            item.transform.position = hit.point;
-        }
-        else
-        {
-            // Positionner l'objet à une distance par défaut si rien n'est sous la souris
-            item.transform.position = Camera.main.ScreenToWorldPoint(new Vector3(
-                Input.mousePosition.x,
-                Input.mousePosition.y,
-                2f)); // Distance par rapport à la caméra
-        }
-    }
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
 
-    private void PlaceObjectInFrontOfPlayer(GameObject item)
-    {
-        Camera mainCamera = Camera.main;
-        if (mainCamera != null)
+        foreach (var result in results)
         {
-            Vector3 positionInFront = mainCamera.transform.position + mainCamera.transform.forward * 2f;
-            positionInFront.y = Mathf.Max(1f, positionInFront.y); // Ajuster la hauteur pour éviter les collisions
-            item.transform.position = positionInFront;
-            item.transform.rotation = Quaternion.identity; // Réinitialiser la rotation
+            GameObject slot = result.gameObject;
+
+            // Vérifiez si le slot appartient à l'inventaire
+            if (slot.transform.IsChildOf(inventoryGrid))
+            {
+                ClearEventSystemTarget(slot); // Nettoyer l'EventSystem
+                GameObject item = GetItemFromSlot(slot);
+
+                if (item != null)
+                {
+                    if (FridgeUIManager.Instance != null && FridgeUIManager.Instance.IsFridgeOpen())
+                    {
+                        FridgeUIManager.Instance.AddToFridge(item);
+                        Inventory.Instance.RemoveFromInventory(item);
+                        Debug.Log($"{item.name} transféré vers le frigo.");
+                    }
+                    else
+                    {
+                        Inventory.Instance.RemoveFromInventory(item);
+                        Debug.Log($"{item.name} retiré de l'inventaire et placé dans la scène.");
+                    }
+                }
+                break;
+            }
         }
     }
 
-    private bool IsPointerOverInventoryArea()
+
+    public bool IsPointerOverInventoryArea()
     {
-        // Vérifier si la souris est dans la zone d'inventaire
-        Vector2 localMousePosition;
-        bool isInside = RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            inventoryArea,
-            Input.mousePosition,
-            null,
-            out localMousePosition);
-
-        if (isInside)
+        // Préparer un PointerEventData pour détecter la position de la souris
+        PointerEventData pointerData = new PointerEventData(EventSystem.current)
         {
-            return inventoryArea.rect.Contains(localMousePosition);
-        }
+            position = Input.mousePosition
+        };
 
-        return false;
-    }
+        // Effectuer un Raycast sur les objets UI
+        List<RaycastResult> raycastResults = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, raycastResults);
 
-    private bool IsItemAlreadyInInventory(GameObject item)
-    {
-        foreach (Transform slot in inventoryGrid)
+        // Vérifier si l'un des objets sous le curseur appartient à l'inventaire
+        foreach (var result in raycastResults)
         {
-            if (slot.childCount > 0 && slot.GetChild(0).gameObject == item)
+            if (result.gameObject.transform.IsChildOf(inventoryArea))
             {
                 return true;
             }
         }
+
         return false;
     }
+
+    private bool IsValidSlot(GameObject slot)
+    {
+        return slot != null && !slot.Equals(null);
+    }
+
+    public bool IsItemInUI(GameObject item)
+    {
+        return itemSlotMapping.ContainsKey(item);
+    }
+
 }
