@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using TMPro;
 
 [System.Serializable]
 public class ObjectConfig
@@ -62,6 +63,10 @@ public class DragAndDropManager : MonoBehaviour
 
     [Tooltip("Image affichée dans le Canvas Overlay.")]
     [SerializeField] private Image overlayImage;
+
+    [Tooltip("Texte affiché lors du drag.")]
+    [SerializeField] private TMP_Text dragOverlayText;
+    [SerializeField] private TextAnimationManager textAnimationManager; // Script d'animation du texte
 
     [Space(10)]
     [Header("Matériaux et Couleurs")]
@@ -142,6 +147,7 @@ public class DragAndDropManager : MonoBehaviour
     public static DragAndDropManager Instance { get; private set; }
     public bool IsMovable { get; private set; }
 
+
     private void Awake()
     {
         if (Instance == null)
@@ -155,6 +161,8 @@ public class DragAndDropManager : MonoBehaviour
                 selectedObject.SetActive(false); // Désactiver l'objet pour éviter les interactions
                 Destroy(selectedObject, 0.1f);   // Détruire après un délai pour laisser l'Input System se mettre à jour
                 selectedObject = null;          // Nettoyer la référence
+                dragOverlayText.gameObject.SetActive(false); // Masque le texte en bas à droite
+
             }
         }
 
@@ -163,6 +171,11 @@ public class DragAndDropManager : MonoBehaviour
 
         if (holdingParent == null || releasedParent == null)
             Debug.LogError("HoldingParent ou ReleasedParent n'est pas assigné !");
+
+        if (dragOverlayText == null)
+        {
+            Debug.LogWarning("Drag Overlay Text is not assigned!");
+        }
     }
 
     private void Update()
@@ -297,6 +310,27 @@ public class DragAndDropManager : MonoBehaviour
                 outlineMaterial.SetColor("_Color", dragColor);
             }
         }
+        // Affiche le texte en bas à droite
+        /*        
+        if (dragOverlayText != null)
+        {
+            dragOverlayText.text = $"Dragging: {selectedObject.name}"; // Personnalisez le message
+            dragOverlayText.gameObject.SetActive(true); // Affiche le texte
+        }*/
+
+        if (textAnimationManager != null)
+        {
+            // Masque le texte en bas à droite
+            if (dragOverlayText != null)
+            {
+                dragOverlayText.gameObject.SetActive(true);
+            }
+            textAnimationManager.StartTextAnimation();
+        }
+        else
+        {
+            Debug.LogWarning("TextAnimationManager non assigné dans DragAndDropManager !");
+        }
 
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
             rb.isKinematic = true;
@@ -413,6 +447,12 @@ public class DragAndDropManager : MonoBehaviour
         if (hoveredRenderer != null && originalMaterials != null)
         {
             hoveredRenderer.materials = originalMaterials;
+        }
+
+        // Masque le texte en bas à droite
+        if (dragOverlayText != null)
+        {
+            dragOverlayText.gameObject.SetActive(false);
         }
 
         // Vérifie si l'objet est relâché dans l'inventaire
