@@ -29,6 +29,13 @@ public class OvenUIManager : MonoBehaviour
         cookingSlots = new IngredientData[maxSlots];
         ovenUI.SetActive(false); // Désactive l'interface du four par défaut
         if (interactionCanvas != null) interactionCanvas.gameObject.SetActive(false); // Désactiver le Canvas "E"
+
+        // Initialisation des valeurs du Slider
+        if (fireSlider != null)
+        {
+            fireSlider.onValueChanged.AddListener(delegate { AdjustFire(); });
+            AdjustFire(); // Met à jour la température dès le début
+        }
     }
 
     private void Update()
@@ -41,6 +48,9 @@ public class OvenUIManager : MonoBehaviour
             if (isUIOpen) CloseOvenUI();
             else OpenOvenUI();
         }
+
+        // Toujours orienter le Slider et la température vers le joueur
+        OrientSliderAndTemperature();
 
         // Met à jour les particules en fonction du slider
         UpdateFireParticles();
@@ -70,6 +80,18 @@ public class OvenUIManager : MonoBehaviour
         }
     }
 
+    private void OrientSliderAndTemperature()
+    {
+        if (fireSlider == null || temperatureText == null || playerTransform == null) return;
+
+        // Oriente le Slider vers le joueur
+        Vector3 lookDirection = (playerTransform.position - fireSlider.transform.position).normalized;
+        fireSlider.transform.forward = -lookDirection;
+
+        // Oriente le Texte de la température
+        temperatureText.transform.forward = -lookDirection;
+    }
+
     private bool IsPlayerInRange()
     {
         return Vector3.Distance(playerTransform.position, transform.position) <= interactionRange;
@@ -90,6 +112,9 @@ public class OvenUIManager : MonoBehaviour
 
     public void AdjustFire()
     {
+        if (fireSlider == null || temperatureText == null) return;
+
+        // Ajuste la température et le texte
         float fireLevel = fireSlider.value * maxEmissionRate;
         temperatureText.text = $"{Mathf.RoundToInt(fireSlider.value * 100)}°"; // Afficher la température
     }
