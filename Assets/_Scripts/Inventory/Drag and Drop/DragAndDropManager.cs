@@ -107,9 +107,12 @@ public class DragAndDropManager : MonoBehaviour
     [SerializeField] private float scrollSensitivity = 0.5f;
 
     [Space(2)]
-    [Header("Smooth Drag")]
+    [Header("Effets de Drag")]
     [Tooltip("Vitesse de lissage pendant le drag (valeurs basses pour un mouvement plus doux).")]
     [SerializeField] private float smoothSpeed = 8f;
+
+    [SerializeField] private GameObject trailPrefab; // Prefab de la traînée
+    private GameObject currentTrail; // Référence à l'instance de la traînée
 
     [Space(10)]
     [Header("Paramètres de Rotation")]
@@ -340,6 +343,13 @@ public class DragAndDropManager : MonoBehaviour
             Debug.LogWarning("TextAnimationManager non assigné dans DragAndDropManager !");
         }
 
+        // Instanciation de la traînée
+        if (trailPrefab != null)
+        {
+            currentTrail = Instantiate(trailPrefab, selectedObject.transform);
+            currentTrail.transform.localPosition = Vector3.zero; // S'assure qu'il suit le centre de l'objet
+        }
+
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
             rb.isKinematic = true;
 
@@ -461,6 +471,13 @@ public class DragAndDropManager : MonoBehaviour
         if (dragOverlayText != null)
         {
             dragOverlayText.gameObject.SetActive(false);
+        }
+
+        // Nettoyage de la traînée
+        if (currentTrail != null)
+        {
+            Destroy(currentTrail);
+            currentTrail = null;
         }
 
         // Vérifie si l'objet est relâché dans l'inventaire

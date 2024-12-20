@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.EventSystems;
 
+
 public class MagicWardrobeInteract : MonoBehaviour
 {
     [Header("UI Interaction")]
@@ -68,7 +69,7 @@ public class MagicWardrobeInteract : MonoBehaviour
             {
                 isPlayerInRange = true;
                 interactionCanvas.gameObject.SetActive(true);
-                interactionText.text = "Appuyez sur E pour ouvrir l'armoire magique";
+                interactionText.text = "Press E";
             }
 
             if (Input.GetKeyDown(KeyCode.E) && !isAnimating)
@@ -84,10 +85,9 @@ public class MagicWardrobeInteract : MonoBehaviour
                 interactionCanvas.gameObject.SetActive(false);
             }
 
-            // Si le joueur s'éloigne, fermer l'UI de l'armoire
             if (isWardrobeOpen)
             {
-                CloseWardrobeUI();
+                CloseWardrobeUI(forceImmediate: true);
             }
         }
     }
@@ -123,64 +123,61 @@ public class MagicWardrobeInteract : MonoBehaviour
 
     private void ToggleWardrobeUI()
     {
-        if (isAnimating) return;
-
-        isAnimating = true;
-        isWardrobeOpen = !isWardrobeOpen;
+        if (isAnimating)
+        {
+            CloseWardrobeUI(forceImmediate: true);
+            return;
+        }
 
         if (isWardrobeOpen)
         {
-            interactionCanvas.gameObject.SetActive(false);
-            wardrobeUI.SetActive(true);
-
-            GenerateRandomItems();
-
-            StartCoroutine(AnimateWardrobeUI(wardrobeClosedPosition, wardrobeOpenPosition, () =>
-            {
-                isAnimating = false;
-            }));
+            CloseWardrobeUI();
         }
         else
         {
-            CloseWardrobeUI();
+            OpenWardrobeUI();
         }
     }
 
-    private void CloseWardrobeUI()
+    private void OpenWardrobeUI()
     {
-        if (isAnimating || !isWardrobeOpen) return;
-
         isAnimating = true;
-        isWardrobeOpen = false;
+        isWardrobeOpen = true;
 
-        StartCoroutine(AnimateWardrobeUI(wardrobeOpenPosition, wardrobeClosedPosition, () =>
+        interactionCanvas.gameObject.SetActive(false);
+        wardrobeUI.SetActive(true);
+
+        GenerateRandomItems();
+
+        StartCoroutine(AnimateWardrobeUI(wardrobeClosedPosition, wardrobeOpenPosition, () =>
         {
-            wardrobeUI.SetActive(false);
-            ClearWardrobeUI();
             isAnimating = false;
         }));
     }
 
-    private void GenerateRandomItems()
+    private void CloseWardrobeUI(bool forceImmediate = false)
     {
-        ClearWardrobeUI();
+        if (!isWardrobeOpen) return;
+        if (isAnimating && !forceImmediate) return;
 
-        for (int i = 0; i < maxSlots; i++)
+        isAnimating = true;
+        isWardrobeOpen = false;
+
+        if (forceImmediate)
         {
-            if (possibleItems.Count == 0) break;
-
-            IngredientData randomItem = possibleItems[Random.Range(0, possibleItems.Count)];
-            GameObject slot = Instantiate(slotPrefab, wardrobeGrid);
-
-            GameObject imageObject = new GameObject("ItemImage");
-            imageObject.transform.SetParent(slot.transform, false);
-            imageObject.AddComponent<RectTransform>().sizeDelta = new Vector2(100, 100);
-            Image slotImage = imageObject.AddComponent<Image>();
-            slotImage.sprite = randomItem.ingredientSprite;
-
-            AddHoverHandlers(slot, randomItem);
-
-            currentItems.Add(slot);
+            wardrobeUIRect.anchoredPosition = wardrobeClosedPosition;
+            wardrobeUI.SetActive(false);
+            ClearWardrobeUI();
+            isAnimating = false;
+        }
+        else
+        {
+            StartCoroutine(AnimateWardrobeUI(wardrobeOpenPosition, wardrobeClosedPosition, () =>
+            {
+                wardrobeUI.SetActive(false);
+                ClearWardrobeUI();
+                isAnimating = false;
+            }));
         }
     }
 
@@ -191,6 +188,77 @@ public class MagicWardrobeInteract : MonoBehaviour
             Destroy(item);
         }
         currentItems.Clear();
+    }
+
+    private void GenerateRandomItems()
+    {
+        ClearWardrobeUI();
+
+        for (int i = 0; i < maxSlots; i++)
+        {
+            if (possibleItems.Count == 0) break;
+
+            // Sélection d'un IngredientData aléatoire
+            IngredientData randomItem = possibleItems[Random.Range(0, possibleItems.Count)];
+
+            // Création d'un slot dans l'UI
+            GameObject slot = Instantiate(slotPrefab, wardrobeGrid);
+
+            GameObject imageObject = new GameObject("ItemImage");
+            imageObject.transform.SetParent(slot.transform, false);
+            imageObject.AddComponent<RectTransform>().sizeDelta = new Vector2(100, 100);
+            Image slotImage = imageObject.AddComponent<Image>();
+            slotImage.sprite = randomItem.ingredientSprite;
+
+            // Instanciation du prefab
+            GameObject instance = Instantiate(randomItem.Prefab);
+            instance.name = randomItem.ingredientName;
+
+            // Ajouter l'IngredientData au prefab instancié
+            IngredientComponent ingredientComponent = instance.AddComponent<IngredientComponent>();
+            ingredientComponent.SetIngredientData(randomItem);
+
+            // Ajouter à ObjectConfig
+            AddToObjectConfig(instance, randomItem);
+
+            // Ajout des handlers pour l'UI
+            AddHoverHandlers(slot, randomItem);
+
+            // Ajout à la liste des items actuels
+            currentItems.Add(slot);
+        }
+    }
+
+    private void AddToObjectConfig(GameObject instance, IngredientData ingredientData)
+    {
+        DragAndDropManager dragManager = DragAndDropManager.Instance;
+
+        if (dragManager == null)
+        {
+            Debug.LogError("DragAndDropManager introuvable !");
+            return;
+        }
+
+        // Vérifier si l'objet est déjà dans ObjectConfig
+        ObjectConfig existingConfig = dragManager.ObjectConfigs.Find(config => config.prefab == instance);
+
+        if (existingConfig == null)
+        {
+            // Ajouter une nouvelle configuration
+            dragManager.ObjectConfigs.Add(new ObjectConfig
+            {
+                category = "Ingredients", // Exemple : vous pouvez ajuster selon vos besoins
+                prefab = instance,
+                ingredientData = ingredientData,
+                isMovable = true
+            });
+
+            Debug.Log($"Ajouté à ObjectConfig : {instance.name} avec {ingredientData.ingredientName}");
+        }
+        else
+        {
+            Debug.LogWarning($"L'objet {instance.name} est déjà présent dans ObjectConfig !");
+        }
     }
 
     private void AddHoverHandlers(GameObject slot, IngredientData data)
@@ -226,7 +294,11 @@ public class MagicWardrobeInteract : MonoBehaviour
     private void TransferItemToInventory(IngredientData data)
     {
         GameObject instance = Instantiate(data.Prefab);
-        instance.name = data.Prefab.name; // Optionnel : pour maintenir la lisibilité
+        instance.name = data.ingredientName;
+
+        IngredientComponent ingredientComponent = instance.AddComponent<IngredientComponent>();
+        ingredientComponent.SetIngredientData(data);
+
         Inventory.Instance.AddToInventory(instance);
         Debug.Log($"{data.ingredientName} ajouté à l'inventaire.");
     }

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 
 public class InventoryUI : MonoBehaviour
 {
@@ -52,7 +53,7 @@ public class InventoryUI : MonoBehaviour
         if (inventoryGrid.childCount >= maxInventorySize)
         {
             Debug.LogWarning("Inventaire plein ! Impossible d'ajouter un nouvel objet.");
-            return;
+            ErrorManager.Instance.ShowErrorMessage("Inventaire plein !"); return;
         }
 
         if (itemSlotMapping.ContainsKey(item))

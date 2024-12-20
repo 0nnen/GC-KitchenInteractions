@@ -63,6 +63,12 @@ public class DragAndDropManagerEditor : Editor
 
         EditorGUILayout.BeginVertical("box");
 
+        // Ajouter un bouton pour insérer un nouvel élément
+        if (GUILayout.Button($"Ajouter un élément à {title}", GUILayout.Height(30)))
+        {
+            AddNewItemToCategory(categoryName);
+        }
+
         // Parcourir les éléments
         for (int i = objectConfigsProp.arraySize - 1; i >= 0; i--)
         {
@@ -95,13 +101,6 @@ public class DragAndDropManagerEditor : Editor
                 EditorGUILayout.Space();
             }
         }
-
-        // Ajouter un bouton pour insérer un nouvel élément
-        if (GUILayout.Button($"Ajouter un élément à {title}", GUILayout.Height(30)))
-        {
-            AddNewItemToCategory(categoryName);
-        }
-
         EditorGUILayout.EndVertical();
     }
 
