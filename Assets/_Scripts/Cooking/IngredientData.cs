@@ -5,6 +5,7 @@ using UnityEngine.UI;
 public class IngredientData : ScriptableObject
 {
     [Header("Informations")]
+    public GameObject Prefab;        // Prefab de l'ingrédient
     public string ingredientName;        // Nom de l'ingrédient
     public Sprite ingredientSprite;       // Image ou icône
     [TextArea] public string description; // Description de l'ingrédient

@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ingredientName: Plate
   ingredientSprite: {fileID: 21300000, guid: 7ab74e659e1f0a34d9cfec21c478fc12, type: 3}
-  description: Bah une assiette hein...
+  description: A simple yet essential item to serve and enjoy your dishes.
   cookingTime: 0

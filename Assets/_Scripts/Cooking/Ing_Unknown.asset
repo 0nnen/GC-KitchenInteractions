@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58dc8cb7c154d2b4b86bf79ab177f858, type: 3}
   m_Name: Ing_Unknown
   m_EditorClassIdentifier: 
-  ingredientName: Unknown
+  ingredientName: Unknown Object
   ingredientSprite: {fileID: -7627845712019329699, guid: 236587ec711348a4792e0060efb1bf73,
     type: 3}
-  description: Objet inconnu
+  description: "A mysterious item\u2014its purpose awaits discovery."
   cookingTime: 0

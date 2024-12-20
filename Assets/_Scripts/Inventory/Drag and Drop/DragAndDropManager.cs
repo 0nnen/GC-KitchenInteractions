@@ -1,11 +1,16 @@
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
-using UnityEditor;
+using UnityEngine.UI;
+using TMPro;
 
 [System.Serializable]
 public class ObjectConfig
 {
+    public string category;                   // Catégorie de l'objet
     public GameObject prefab;                 // Prefab de l'objet
     public IngredientData ingredientData;     // Le ScriptableObject associé
     public bool canReceiveChildren = false;   // Peut recevoir des enfants ?
@@ -28,6 +33,7 @@ public class ObjectConfig
     public bool invertDoorRotation = false;
 
     [Tooltip("Limite de rotation de la porte en degrés. Visible si 'hasDoor' est activé.")]
+    [Range(0f, 120f)]
     public float doorRotationLimit = 120f;
 }
 
@@ -43,6 +49,25 @@ public class DragAndDropManager : MonoBehaviour
     [Tooltip("Transform parent par défaut après le relâchement.")]
     [SerializeField] private Transform releasedParent;
 
+    [Header("UI Settings")]
+    [Tooltip("Canvas World Space pour le message 'Left Click To Drag'.")]
+    [SerializeField] private Canvas hoverCanvasWorldSpace;
+
+    [Tooltip("Texte affiché dans le Canvas World Space.")]
+    [SerializeField] private TMPro.TextMeshProUGUI hoverWorldText;
+
+    [Tooltip("Canvas Overlay pour afficher les détails de l'objet.")]
+    [SerializeField] private Canvas overlayCanvas;
+
+    [Tooltip("Texte affiché dans le Canvas Overlay.")]
+    [SerializeField] private TMPro.TextMeshProUGUI overlayNameText;
+
+    [Tooltip("Image affichée dans le Canvas Overlay.")]
+    [SerializeField] private Image overlayImage;
+
+    [Tooltip("Texte affiché lors du drag.")]
+    [SerializeField] private TMP_Text dragOverlayText;
+    [SerializeField] private TextAnimationManager textAnimationManager; // Script d'animation du texte
 
     [Space(10)]
     [Header("Matériaux et Couleurs")]
@@ -54,6 +79,13 @@ public class DragAndDropManager : MonoBehaviour
 
     [Tooltip("Couleur affichée lorsque l'objet est en cours de drag.")]
     [SerializeField] private Color dragColor = Color.yellow;
+
+    [Header("Effets Visuels")]
+    [Tooltip("Prefab des particules à afficher lorsqu'un objet devient enfant d'un autre.")]
+    [SerializeField] private GameObject particlePrefab;
+
+    [Tooltip("Décalage des particules par rapport au parent.")]
+    [SerializeField] private Vector3 particleOffset = new Vector3(0, 0.5f, 0); // Décalage par défaut
 
 
     [Space(10)]
@@ -93,6 +125,7 @@ public class DragAndDropManager : MonoBehaviour
     [Header("Configurations d'Objets")]
     [Tooltip("Liste des objets configurables pour le drag-and-drop.")]
     [SerializeField] private List<ObjectConfig> objectConfigs;
+    public List<ObjectConfig> ObjectConfigs => objectConfigs;
 
     [Header("Debugging")]
     [Tooltip("Afficher des gizmos pour la détection de drop.")]
@@ -116,10 +149,12 @@ public class DragAndDropManager : MonoBehaviour
     private GameObject hoveredObject; // Référence à l'objet survolé
     private Renderer hoveredRenderer; // Renderer de l'objet survolé
     private Material[] hoveredOriginalMaterials; // Matériaux originaux de l'objet survolé
-
+    private Vector3 hoverOffset = new Vector3(0, 0.5f, 0); // Décalage vertical
+    private Dictionary<GameObject, HashSet<GameObject>> parentChildMap = new();
 
     public static DragAndDropManager Instance { get; private set; }
     public bool IsMovable { get; private set; }
+
 
     private void Awake()
     {
@@ -134,6 +169,8 @@ public class DragAndDropManager : MonoBehaviour
                 selectedObject.SetActive(false); // Désactiver l'objet pour éviter les interactions
                 Destroy(selectedObject, 0.1f);   // Détruire après un délai pour laisser l'Input System se mettre à jour
                 selectedObject = null;          // Nettoyer la référence
+                dragOverlayText.gameObject.SetActive(false); // Masque le texte en bas à droite
+
             }
         }
 
@@ -142,6 +179,11 @@ public class DragAndDropManager : MonoBehaviour
 
         if (holdingParent == null || releasedParent == null)
             Debug.LogError("HoldingParent ou ReleasedParent n'est pas assigné !");
+
+        if (dragOverlayText == null)
+        {
+            Debug.LogWarning("Drag Overlay Text is not assigned!");
+        }
     }
 
     private void Update()
@@ -176,7 +218,7 @@ public class DragAndDropManager : MonoBehaviour
                 StopDragging();
             }
         }
-
+        CheckChildrenContact(); // Vérifier si les enfants restent en contact
     }
 
 
@@ -212,6 +254,12 @@ public class DragAndDropManager : MonoBehaviour
                 // Sinon, vérifier si c'est le prefab lui-même
                 if (hitObject == config.prefab)
                 {
+                    if (!config.isMovable)
+                    {
+                        Debug.LogWarning($"{hitObject.name} n'est pas déplaçable (isMovable=false).");
+                        return; // Ne pas permettre le drag
+                    }
+
                     selectedObject = config.prefab;
                     currentConfig = config;
 
@@ -235,7 +283,13 @@ public class DragAndDropManager : MonoBehaviour
 
     private void StartDragging(Vector3 hitPoint)
     {
+        // Masque le Canvas World Space au début du drag
+        HideHoverCanvasWorldSpace();
+
         isDragging = true;
+
+        // Réinitialiser l'outline précédent
+        ResetOutline(hoveredRenderer, hoveredOriginalMaterials);
 
         // Initialiser la distance de drag
         dragDepth = Vector3.Distance(mainCamera.transform.position, selectedObject.transform.position);
@@ -264,6 +318,27 @@ public class DragAndDropManager : MonoBehaviour
                 outlineMaterial.SetColor("_Color", dragColor);
             }
         }
+        // Affiche le texte en bas à droite
+        /*        
+        if (dragOverlayText != null)
+        {
+            dragOverlayText.text = $"Dragging: {selectedObject.name}"; // Personnalisez le message
+            dragOverlayText.gameObject.SetActive(true); // Affiche le texte
+        }*/
+
+        if (textAnimationManager != null)
+        {
+            // Masque le texte en bas à droite
+            if (dragOverlayText != null)
+            {
+                dragOverlayText.gameObject.SetActive(true);
+            }
+            textAnimationManager.StartTextAnimation();
+        }
+        else
+        {
+            Debug.LogWarning("TextAnimationManager non assigné dans DragAndDropManager !");
+        }
 
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
             rb.isKinematic = true;
@@ -271,9 +346,14 @@ public class DragAndDropManager : MonoBehaviour
         selectedObject.transform.SetParent(holdingParent);
     }
 
-
     private void DragObject()
     {
+        if (!currentConfig.isMovable)
+        {
+            Debug.LogWarning($"{selectedObject.name} ne peut pas être déplacé (isMovable=false).");
+            return;
+        }
+
         // Gestion du Scroll pour ajuster la profondeur
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (Mathf.Abs(scroll) > Mathf.Epsilon) // Si un scroll est détecté
@@ -355,6 +435,9 @@ public class DragAndDropManager : MonoBehaviour
         if (selectedObject.TryGetComponent<Rigidbody>(out Rigidbody rb))
             rb.isKinematic = false;
 
+        // Réinitialiser les matériaux après le drag
+        ResetOutline(selectedObject.GetComponent<Renderer>(), originalMaterials);
+
         // Réinitialisation des matériaux
         if (currentConfig.hasDoor && doorRenderer != null)
         {
@@ -368,45 +451,174 @@ public class DragAndDropManager : MonoBehaviour
                 renderer.materials = originalMaterials;
         }
 
-        // Vérifie si l'objet est relâché dans l'inventaire
-        if (InventoryUI.Instance.IsPointerOverInventoryArea())
+        // Réinitialisation des matériaux
+        if (hoveredRenderer != null && originalMaterials != null)
         {
-            if (currentConfig.isMovable) // Vérifie si l'objet est déplaçable
+            hoveredRenderer.materials = originalMaterials;
+        }
+
+        // Masque le texte en bas à droite
+        if (dragOverlayText != null)
+        {
+            dragOverlayText.gameObject.SetActive(false);
+        }
+
+        // Vérifie si l'objet est relâché dans l'inventaire
+        if (IsPointerOverInventory() && InventoryUI.Instance != null)
+        {
+            Inventory.Instance.AddToInventory(selectedObject);
+            Debug.Log($"{selectedObject.name} ajouté à l'inventaire.");
+            CleanupDragging();
+            return;
+        }
+
+        // Vérifie si l'objet est relâché sur un autre objet interactif
+        Collider[] colliders = Physics.OverlapSphere(selectedObject.transform.position, overlapSphereRadius, interactableLayer);
+        foreach (var collider in colliders)
+        {
+            GameObject potentialParent = collider.gameObject;
+            ObjectConfig potentialParentConfig = objectConfigs.Find(config => config.prefab == potentialParent);
+
+            if (potentialParentConfig != null && potentialParentConfig.canReceiveChildren)
             {
-                Inventory.Instance.AddToInventory(selectedObject);
-                Debug.Log($"{selectedObject.name} ajouté à l'inventaire.");
-            }
-            else
-            {
-                Debug.LogWarning($"{selectedObject.name} ne peut pas être ajouté à l'inventaire car il n'est pas déplaçable.");
+                Debug.Log($"{selectedObject.name} devient enfant de {potentialParent.name}");
+                selectedObject.transform.SetParent(potentialParent.transform);
+
+                // Mémorise la relation dans le parentChildMap
+                if (!parentChildMap.ContainsKey(potentialParent))
+                    parentChildMap[potentialParent] = new HashSet<GameObject>();
+
+                parentChildMap[potentialParent].Add(selectedObject);
+
+                if (particlePrefab != null)
+                {
+                    // Ajouter les particules à l'emplacement ajusté par l'offset
+                    Vector3 particlePosition = potentialParent.transform.position + particleOffset;
+                    Instantiate(particlePrefab, particlePosition, Quaternion.identity);
+                }
+
+                CleanupDragging();
+                return;
             }
         }
-        else if (currentConfig.canReceiveChildren)
+
+        // Si aucun parent n'est trouvé, relâcher l'objet dans la scène
+        selectedObject.transform.SetParent(releasedParent);
+        Debug.Log($"{selectedObject.name} relâché dans la scène.");
+        CleanupDragging();
+    }
+
+
+    private void UpdateChildrenState()
+    {
+        foreach (var config in objectConfigs)
         {
-            // Vérifie si l'objet est relâché sur un objet qui peut recevoir des enfants
-            Collider[] colliders = Physics.OverlapSphere(selectedObject.transform.position, overlapSphereRadius, interactableLayer);
-            foreach (var collider in colliders)
+            if (config.canReceiveChildren)
             {
-                if (collider == currentConfig.dropZoneCollider)
+                GameObject parent = config.prefab;
+
+                // Initialise une relation si elle n'existe pas déjà
+                if (!parentChildMap.ContainsKey(parent))
+                    parentChildMap[parent] = new HashSet<GameObject>();
+
+                // Récupère les enfants actuels
+                List<Transform> currentChildren = new List<Transform>();
+                foreach (Transform child in parent.transform)
                 {
-                    selectedObject.transform.SetParent(collider.transform);
-                    Debug.Log($"{selectedObject.name} est devenu un enfant de {collider.name}");
-                    break;
+                    currentChildren.Add(child);
+                }
+
+                // Vérifie si les enfants actuels doivent être ajoutés ou retirés
+                Collider[] colliders = Physics.OverlapSphere(parent.transform.position, overlapSphereRadius, interactableLayer);
+                foreach (var child in currentChildren)
+                {
+                    // Si l'enfant est sorti de la zone de détection mais qu'il est déjà dans la map, on le garde
+                    if (!parentChildMap[parent].Contains(child.gameObject))
+                    {
+                        bool isStillInContact = false;
+                        foreach (var collider in colliders)
+                        {
+                            if (collider.gameObject == child.gameObject)
+                            {
+                                isStillInContact = true;
+                                break;
+                            }
+                        }
+
+                        if (!isStillInContact)
+                        {
+                            Debug.Log($"{child.name} n'est plus en contact avec {parent.name} et sera détaché.");
+                            child.SetParent(releasedParent);
+                            parentChildMap[parent].Remove(child.gameObject);
+                        }
+                    }
+                }
+
+                // Ajoute les nouveaux enfants détectés
+                foreach (var collider in colliders)
+                {
+                    GameObject potentialChild = collider.gameObject;
+                    if (potentialChild.transform.parent != parent.transform)
+                    {
+                        Debug.Log($"{potentialChild.name} devient enfant de {parent.name}");
+                        potentialChild.transform.SetParent(parent.transform);
+                        parentChildMap[parent].Add(potentialChild);
+                    }
                 }
             }
         }
-        else
-        {
-            selectedObject.transform.SetParent(releasedParent);
-            Debug.Log($"{selectedObject.name} relâché dans la scène.");
-        }
-
-        // Nettoyage des variables
-        selectedObject = null;
-        currentConfig = null;
-        isDragging = false;
     }
 
+    private void CheckChildrenContact()
+    {
+        foreach (var config in objectConfigs)
+        {
+            if (config.canReceiveChildren && config.prefab.transform.childCount > 0)
+            {
+                Collider[] colliders = Physics.OverlapSphere(
+                    config.prefab.transform.position,
+                    overlapSphereRadius,
+                    interactableLayer
+                );
+
+                // Récupère les enfants actuels
+                List<Transform> currentChildren = new List<Transform>();
+                foreach (Transform child in config.prefab.transform)
+                {
+                    currentChildren.Add(child);
+                }
+
+                // Vérifie si chaque enfant est toujours dans la zone
+                foreach (var child in currentChildren)
+                {
+                    // Vérifiez si l'objet est sur le point d'être ajouté à l'inventaire
+                    if (IsPointerOverInventory() && InventoryUI.Instance != null)
+                    {
+                        Debug.Log($"{child.name} sera ajouté à l'inventaire, ignore le détachement.");
+                        continue; // Ignore cette logique pour cet enfant
+                    }
+
+                    bool isStillInContact = false;
+
+                    foreach (var collider in colliders)
+                    {
+                        if (collider.gameObject == child.gameObject)
+                        {
+                            isStillInContact = true;
+                            break;
+                        }
+                    }
+
+                    // Si l'enfant n'est plus en contact, le détacher
+                    if (!isStillInContact)
+                    {
+                        Debug.Log($"{child.name} n'est plus en contact avec {config.prefab.name} et sera détaché.");
+                        child.SetParent(releasedParent);
+                    }
+                }
+            }
+        }
+    }
 
 
     private void HandleHover()
@@ -432,7 +644,7 @@ public class DragAndDropManager : MonoBehaviour
 
                         if (hoveredRenderer != null)
                         {
-                            ApplyOutline(hoveredRenderer);
+                            ApplyHoverOutline(hoveredRenderer);
                             return; // Sortir après avoir appliqué l'outline sur la porte
                         }
                     }
@@ -443,9 +655,16 @@ public class DragAndDropManager : MonoBehaviour
                         hoveredObject = hitObject;
                         hoveredRenderer = hoveredObject.GetComponent<Renderer>();
 
-                        if (hoveredRenderer != null)
+
+                        if (hoveredRenderer != null && config.prefab == hitObject && config.isMovable)
                         {
-                            ApplyOutline(hoveredRenderer);
+                            // Appliquer l'outline
+                            ApplyHoverOutline(hoveredRenderer);
+
+                            // Affiche les Canvas
+                            ShowHoverCanvasWorldSpace(hitObject);
+                            ShowOverlayCanvas(config);
+
                             return; // Sortir après avoir appliqué l'outline sur le prefab
                         }
                     }
@@ -461,26 +680,119 @@ public class DragAndDropManager : MonoBehaviour
 
     private void ClearHover()
     {
-        if (hoveredRenderer != null && hoveredOriginalMaterials != null)
-        {
-            hoveredRenderer.materials = hoveredOriginalMaterials; // Restaure les matériaux d'origine
-        }
+        // Réinitialiser les outlines de hover
+        ResetOutline(hoveredRenderer, hoveredOriginalMaterials);
+
+        // Désactive les Canvas
+        HideHoverCanvasWorldSpace();
+        HideOverlayCanvas();
 
         hoveredObject = null;
         hoveredRenderer = null;
         hoveredOriginalMaterials = null;
     }
 
-    private void ApplyOutline(Renderer renderer)
+    private void ApplyHoverOutline(Renderer renderer)
     {
-        hoveredOriginalMaterials = renderer.materials;
-        var materials = new List<Material>(hoveredOriginalMaterials) { outlineMaterial };
-        renderer.materials = materials.ToArray();
-        outlineMaterial.SetColor("_Color", hoverColor); // Applique la couleur de survol
+        // Réinitialiser les outlines précédents
+        ResetOutline(hoveredRenderer, hoveredOriginalMaterials);
+
+        // Appliquer les outlines pour le hover
+        if (renderer != null)
+        {
+            hoveredOriginalMaterials = renderer.materials;
+            var materials = new List<Material>(hoveredOriginalMaterials) { outlineMaterial };
+            renderer.materials = materials.ToArray();
+            outlineMaterial.SetColor("_Color", hoverColor);
+        }
+    }
+
+    private void ApplyDragOutline(Renderer renderer)
+    {
+        if (renderer != null && outlineMaterial != null)
+        {
+            var materials = new List<Material>(originalMaterials) { outlineMaterial };
+            renderer.materials = materials.ToArray();
+            outlineMaterial.SetColor("_Color", dragColor); // Applique la couleur de drag
+        }
+    }
+    private void ResetOutline(Renderer renderer, Material[] originalMaterials)
+    {
+        if (renderer != null && originalMaterials != null)
+        {
+            renderer.materials = originalMaterials;
+        }
+    }
+
+    private void ShowHoverCanvasWorldSpace(GameObject target)
+    {
+        if (hoverCanvasWorldSpace != null)
+        {
+            // Active le Canvas World Space
+            hoverCanvasWorldSpace.gameObject.SetActive(true);
+
+            // Positionne le Canvas au-dessus de l'objet
+            hoverCanvasWorldSpace.transform.position = target.transform.position + hoverOffset;
+
+            // Oriente le Canvas pour qu'il fasse face à la caméra
+            Vector3 cameraDirection = (hoverCanvasWorldSpace.transform.position - mainCamera.transform.position).normalized;
+            hoverCanvasWorldSpace.transform.forward = cameraDirection;
+
+            // Met à jour le texte
+            if (hoverWorldText != null)
+            {
+                hoverWorldText.text = "Left Click To Drag";
+            }
+        }
+    }
+
+
+    private void HideHoverCanvasWorldSpace()
+    {
+        if (hoverCanvasWorldSpace != null)
+        {
+            hoverCanvasWorldSpace.gameObject.SetActive(false);
+        }
+    }
+
+    private void ShowOverlayCanvas(ObjectConfig config)
+    {
+        if (overlayCanvas != null)
+        {
+            // Active le Canvas Overlay
+            overlayCanvas.gameObject.SetActive(true);
+
+            // Met à jour le texte avec le nom de l'objet
+            if (overlayNameText != null)
+            {
+                overlayNameText.text = config.ingredientData != null
+                    ? config.ingredientData.ingredientName
+                    : config.prefab.name;
+            }
+
+            // Met à jour l'image avec le sprite issu de l'ingredientData
+            if (overlayImage != null && config.ingredientData != null)
+            {
+                overlayImage.sprite = config.ingredientData.ingredientSprite; // Assurez-vous que 'IngredientData' a un champ 'Sprite'
+                overlayImage.enabled = config.ingredientData.ingredientSprite != null; // Cache l'image si aucune n'est définie
+            }
+            else
+            {
+                overlayImage.enabled = false; // Désactive l'image si l'ingredientData ou le sprite est null
+            }
+        }
+    }
+
+    private void HideOverlayCanvas()
+    {
+        if (overlayCanvas != null)
+        {
+            overlayCanvas.gameObject.SetActive(false);
+        }
     }
 
     private bool IsPointerOverInventory()
-    {
+        {
         if (InventoryUI.Instance == null) return false;
 
         Vector2 localMousePosition;
@@ -552,9 +864,9 @@ public class DragAndDropManager : MonoBehaviour
             }
 
             // Affiche un label uniquement si Handles est disponible (éditeur Unity)
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
             Handles.Label(currentConfig.prefab.transform.position, $"Object: {currentConfig.prefab.name}");
-#endif
+        #endif
         }
     }
 
