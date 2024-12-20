@@ -2,156 +2,118 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class OvenUIManager : MonoBehaviour
+public class OvenSliderUI : MonoBehaviour
 {
-    [Header("UI Références")]
-    [SerializeField] private GameObject ovenUI;           // Canvas pour l'interface complète du four
-    [SerializeField] private Canvas interactionCanvas;    // Canvas pour l'indication "Appuyez sur E"
-    [SerializeField] private Slider fireSlider;           // Slider de contrôle du feu
-    [SerializeField] private TMP_Text temperatureText;    // Texte pour afficher la température
-    [SerializeField] private Transform slotGrid;          // Grille pour les slots
-    [SerializeField] private GameObject slotPrefab;       // Prefab pour les slots
-    [SerializeField] private Transform playerTransform;   // Transform du joueur
+    [Header("UI Elements")]
+    [SerializeField] private Canvas sliderCanvas; // Canvas contenant le slider
+    [SerializeField] private Slider fireSlider; // Slider de contrôle
+    [SerializeField] private TMP_Text valueText; // Texte affichant la valeur du slider
+    [SerializeField] private Transform sliderAnchor; // Objet 3D représentant le centre du slider
 
-    [Header("Particules")]
-    [SerializeField] private ParticleSystem fireParticles; // Système de particules du feu
-    [SerializeField] private float maxEmissionRate = 100f; // Taux d'émission maximal des particules
+    [Header("Particle Settings")]
+    [SerializeField] private ParticleSystem smokeParticles; // Système de particules à ajuster
+    [SerializeField] private float minStartSize = 0.5f; // Taille minimale des particules
+    [SerializeField] private float maxStartSize = 3.0f; // Taille maximale des particules
+    [SerializeField] private float sliderMinValue = 150f; // Valeur minimale du slider
+    [SerializeField] private float sliderMaxValue = 900f; // Valeur maximale du slider
 
-    [Header("Paramètres")]
-    [SerializeField] private float interactionRange = 3.0f; // Distance pour afficher le Canvas d'interaction
-    [SerializeField] private int maxSlots = 2;             // Nombre maximum de slots dans le four
+    [Header("Settings")]
+    [SerializeField] private float interactionRange = 3.0f; // Distance pour afficher le slider
+    [SerializeField] private Transform playerTransform; // Transform du joueur
+    [SerializeField] private Vector3 canvasOffset = new Vector3(0, 0.5f, 0.5f); // Décalage du Canvas depuis l'ancre
+    [SerializeField] private Vector3 fixedCanvasRotation = new Vector3(0, 0, 0); // Rotation fixe du Canvas
+    [SerializeField] private bool dynamicOrientation = false; // Activer/désactiver la rotation dynamique vers le joueur
 
-    private IngredientData[] cookingSlots;                // Slots de cuisson
-    private bool isUIOpen = false;
-
-    private void Awake()
+    private void Start()
     {
-        cookingSlots = new IngredientData[maxSlots];
-        ovenUI.SetActive(false); // Désactive l'interface du four par défaut
-        if (interactionCanvas != null) interactionCanvas.gameObject.SetActive(false); // Désactiver le Canvas "E"
+        // Désactiver le Canvas au départ
+        if (sliderCanvas != null)
+            sliderCanvas.gameObject.SetActive(false);
 
-        // Initialisation des valeurs du Slider
-        if (fireSlider != null)
+        // Assurez-vous que les particules jouent
+        if (smokeParticles != null && !smokeParticles.isPlaying)
         {
-            fireSlider.onValueChanged.AddListener(delegate { AdjustFire(); });
-            AdjustFire(); // Met à jour la température dès le début
+            smokeParticles.Play();
         }
+
+        // Initialisation des paramètres
+        UpdateSliderValue();
+        UpdateParticleSize();
     }
 
     private void Update()
     {
-        HandleInteractionCanvas();
-
-        // Ouvrir ou fermer l'UI avec "E"
-        if (Input.GetKeyDown(KeyCode.E) && IsPlayerInRange())
-        {
-            if (isUIOpen) CloseOvenUI();
-            else OpenOvenUI();
-        }
-
-        // Toujours orienter le Slider et la température vers le joueur
-        OrientSliderAndTemperature();
-
-        // Met à jour les particules en fonction du slider
-        UpdateFireParticles();
+        HandleSliderVisibility();
+        UpdateSliderValue();
+        UpdateParticleSize();
     }
 
-    private void HandleInteractionCanvas()
+    private void HandleSliderVisibility()
     {
-        if (interactionCanvas == null || playerTransform == null) return;
+        if (sliderCanvas == null || sliderAnchor == null || playerTransform == null) return;
 
-        if (IsPlayerInRange())
+        // Calcul de la distance au joueur
+        float distanceToPlayer = Vector3.Distance(playerTransform.position, sliderAnchor.position);
+
+        // Gestion de la visibilité du slider
+        if (distanceToPlayer <= interactionRange)
         {
-            if (!interactionCanvas.gameObject.activeSelf)
+            if (!sliderCanvas.gameObject.activeSelf)
             {
-                interactionCanvas.gameObject.SetActive(true);
+                sliderCanvas.gameObject.SetActive(true);
             }
 
-            // Oriente le Canvas vers le joueur
-            Vector3 lookDirection = (playerTransform.position - interactionCanvas.transform.position).normalized;
-            interactionCanvas.transform.forward = -lookDirection;
+            // Position et orientation du Canvas
+            sliderCanvas.transform.position = sliderAnchor.position + canvasOffset;
+            if (dynamicOrientation)
+            {
+                Vector3 directionToPlayer = playerTransform.position - sliderCanvas.transform.position;
+                Quaternion lookRotation = Quaternion.LookRotation(-directionToPlayer.normalized);
+                sliderCanvas.transform.rotation = lookRotation;
+            }
+            else
+            {
+                sliderCanvas.transform.eulerAngles = fixedCanvasRotation;
+            }
         }
         else
         {
-            if (interactionCanvas.gameObject.activeSelf)
+            if (sliderCanvas.gameObject.activeSelf)
             {
-                interactionCanvas.gameObject.SetActive(false);
+                sliderCanvas.gameObject.SetActive(false);
             }
         }
     }
 
-    private void OrientSliderAndTemperature()
+    private void UpdateSliderValue()
     {
-        if (fireSlider == null || temperatureText == null || playerTransform == null) return;
+        if (valueText == null || fireSlider == null) return;
 
-        // Oriente le Slider vers le joueur
-        Vector3 lookDirection = (playerTransform.position - fireSlider.transform.position).normalized;
-        fireSlider.transform.forward = -lookDirection;
-
-        // Oriente le Texte de la température
-        temperatureText.transform.forward = -lookDirection;
+        // Met à jour le texte avec la valeur du slider
+        valueText.text = Mathf.RoundToInt(fireSlider.value).ToString();
     }
 
-    private bool IsPlayerInRange()
+    private void UpdateParticleSize()
     {
-        return Vector3.Distance(playerTransform.position, transform.position) <= interactionRange;
-    }
+        if (smokeParticles == null || fireSlider == null) return;
 
-    public void OpenOvenUI()
-    {
-        ovenUI.SetActive(true);
-        isUIOpen = true;
-        UpdateSlots();
-    }
+        // Normaliser la valeur du slider dans la plage [0, 1]
+        float normalizedValue = (fireSlider.value - sliderMinValue) / (sliderMaxValue - sliderMinValue);
 
-    public void CloseOvenUI()
-    {
-        ovenUI.SetActive(false);
-        isUIOpen = false;
-    }
+        // Calculer la nouvelle taille minimale en fonction du slider
+        float newStartSize = Mathf.Lerp(minStartSize, maxStartSize, normalizedValue);
 
-    public void AdjustFire()
-    {
-        if (fireSlider == null || temperatureText == null) return;
+        // Appliquer la nouvelle valeur au startSize
+        var mainModule = smokeParticles.main;
+        var currentStartSize = mainModule.startSize;
 
-        // Ajuste la température et le texte
-        float fireLevel = fireSlider.value * maxEmissionRate;
-        temperatureText.text = $"{Mathf.RoundToInt(fireSlider.value * 100)}°"; // Afficher la température
-    }
-
-    private void UpdateFireParticles()
-    {
-        if (fireParticles == null) return;
-
-        var emission = fireParticles.emission;
-        emission.rateOverTime = fireSlider.value * maxEmissionRate;
-
-        var main = fireParticles.main;
-        main.simulationSpeed = 0.5f + fireSlider.value; // Ajuste la vitesse des particules
-    }
-
-    public void AddToSlot(int slotIndex, IngredientData ingredient)
-    {
-        if (slotIndex < 0 || slotIndex >= maxSlots) return;
-
-        cookingSlots[slotIndex] = ingredient;
-        UpdateSlots();
-    }
-
-    private void UpdateSlots()
-    {
-        foreach (Transform child in slotGrid)
+        if (currentStartSize.mode == ParticleSystemCurveMode.TwoConstants)
         {
-            Destroy(child.gameObject);
+            mainModule.startSize = new ParticleSystem.MinMaxCurve(newStartSize, currentStartSize.constantMax);
         }
-
-        for (int i = 0; i < cookingSlots.Length; i++)
+        else
         {
-            GameObject slot = Instantiate(slotPrefab, slotGrid);
-            if (cookingSlots[i] != null)
-            {
-                slot.GetComponentInChildren<Image>().sprite = cookingSlots[i].ingredientSprite;
-            }
+            mainModule.startSize = newStartSize;
         }
     }
 }

@@ -24,9 +24,9 @@ public class TextAnimationManager : MonoBehaviour
         }
 
         // Calculer les positions
-        startPosition = new Vector2(0, Screen.height + textTransform.rect.height);
+        startPosition = new Vector2(0, Screen.height + textTransform.rect.height + 200);
         endPosition = new Vector2(0, Screen.height - marginFromTop);
-        exitPosition = new Vector2(0, -textTransform.rect.height); // Sortie par le bas
+        exitPosition = new Vector2(0, -textTransform.rect.height - 100); // Sortie par le bas
 
         // Initialiser l'état
         textTransform.anchoredPosition = startPosition;
