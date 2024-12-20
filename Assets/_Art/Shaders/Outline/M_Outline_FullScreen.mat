@@ -48,5 +48,5 @@ Material:
     - _Fullscreen_SrcColorBlend: 5
     - _Thickness: 0.004
     m_Colors:
-    - _Color: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 0}
+    - _Color: {r: 0.20754719, g: 0.20754719, b: 0.20754719, a: 0.21960784}
   m_BuildTextureStacks: []
