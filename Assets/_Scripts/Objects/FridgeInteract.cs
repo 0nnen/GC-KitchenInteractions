@@ -68,7 +68,7 @@ public class FridgeInteract : MonoBehaviour
             if (!isPlayerInRange)
             {
                 isPlayerInRange = true;
-                InteractionMessageHandler.Instance.ShowMessage("Appuyez sur E pour ouvrir le frigo", transform);
+                InteractionMessageHandler.Instance.ShowMessage("Press E", transform);
             }
 
             if (Input.GetKeyDown(KeyCode.E) && !isAnimating)

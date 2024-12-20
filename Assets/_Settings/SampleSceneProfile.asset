@@ -214,7 +214,7 @@ MonoBehaviour:
     m_OverrideState: 0
     m_Value: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   balance:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: 25.4
 --- !u!114 &8065244142681446173
 MonoBehaviour:
@@ -234,7 +234,7 @@ MonoBehaviour:
     m_Value: 1
   gaussianStart:
     m_OverrideState: 1
-    m_Value: 5.5
+    m_Value: 5
   gaussianEnd:
     m_OverrideState: 1
     m_Value: 20

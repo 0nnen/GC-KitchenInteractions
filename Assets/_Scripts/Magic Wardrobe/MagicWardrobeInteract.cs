@@ -225,7 +225,9 @@ public class MagicWardrobeInteract : MonoBehaviour
 
     private void TransferItemToInventory(IngredientData data)
     {
-        Inventory.Instance.AddToInventory(data.Prefab);
+        GameObject instance = Instantiate(data.Prefab);
+        instance.name = data.Prefab.name; // Optionnel : pour maintenir la lisibilité
+        Inventory.Instance.AddToInventory(instance);
         Debug.Log($"{data.ingredientName} ajouté à l'inventaire.");
     }
 

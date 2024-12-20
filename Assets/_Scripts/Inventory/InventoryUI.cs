@@ -124,12 +124,42 @@ public class InventoryUI : MonoBehaviour
                 }
 
                 Debug.Log($"{item.name} retiré de l'inventaire et replacé dans la scène.");
+
+                // Ajouter à la liste ObjectConfig
+                AddToObjectConfig(item);
             }
         }
         else
         {
             Debug.LogWarning($"{item.name} n'a pas de slot associé dans l'inventaire !");
         }
+    }
+
+    private void AddToObjectConfig(GameObject item)
+    {
+        if (DragAndDropManager.Instance == null)
+        {
+            Debug.LogError("DragAndDropManager n'est pas initialisé !");
+            return;
+        }
+
+        ObjectConfig existingConfig = DragAndDropManager.Instance.GetConfigForPrefab(item);
+        if (existingConfig != null)
+        {
+            Debug.LogWarning($"{item.name} est déjà présent dans ObjectConfig !");
+            return;
+        }
+
+        // Créer une nouvelle configuration pour l'objet
+        ObjectConfig newConfig = new ObjectConfig
+        {
+            prefab = item,
+            isMovable = true, // Rendre l'objet déplaçable
+            ingredientData = null // Ajoutez d'autres propriétés si nécessaire
+        };
+
+        DragAndDropManager.Instance.ObjectConfigs.Add(newConfig);
+        Debug.Log($"{item.name} ajouté à la liste ObjectConfig et marqué comme movable.");
     }
 
 

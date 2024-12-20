@@ -49,7 +49,6 @@ public class DragAndDropManager : MonoBehaviour
     [Tooltip("Transform parent par défaut après le relâchement.")]
     [SerializeField] private Transform releasedParent;
 
-
     [Header("UI Settings")]
     [Tooltip("Canvas World Space pour le message 'Left Click To Drag'.")]
     [SerializeField] private Canvas hoverCanvasWorldSpace;
@@ -80,6 +79,13 @@ public class DragAndDropManager : MonoBehaviour
 
     [Tooltip("Couleur affichée lorsque l'objet est en cours de drag.")]
     [SerializeField] private Color dragColor = Color.yellow;
+
+    [Header("Effets Visuels")]
+    [Tooltip("Prefab des particules à afficher lorsqu'un objet devient enfant d'un autre.")]
+    [SerializeField] private GameObject particlePrefab;
+
+    [Tooltip("Décalage des particules par rapport au parent.")]
+    [SerializeField] private Vector3 particleOffset = new Vector3(0, 0.5f, 0); // Décalage par défaut
 
 
     [Space(10)]
@@ -483,6 +489,13 @@ public class DragAndDropManager : MonoBehaviour
                     parentChildMap[potentialParent] = new HashSet<GameObject>();
 
                 parentChildMap[potentialParent].Add(selectedObject);
+
+                if (particlePrefab != null)
+                {
+                    // Ajouter les particules à l'emplacement ajusté par l'offset
+                    Vector3 particlePosition = potentialParent.transform.position + particleOffset;
+                    Instantiate(particlePrefab, particlePosition, Quaternion.identity);
+                }
 
                 CleanupDragging();
                 return;
