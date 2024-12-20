@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58dc8cb7c154d2b4b86bf79ab177f858, type: 3}
   m_Name: Ing_Meat
   m_EditorClassIdentifier: 
+  Prefab: {fileID: 1902271098695974524, guid: 2c25d42adeb174049963f6df4c9b7c9a, type: 3}
   ingredientName: Raw Steak
   ingredientSprite: {fileID: 21300000, guid: a335ab1976f86d743937768bcbdfdda2, type: 3}
   description: A rich and savory protein, perfect for hearty meals and barbecues.

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58dc8cb7c154d2b4b86bf79ab177f858, type: 3}
   m_Name: Ing_Cheese
   m_EditorClassIdentifier: 
+  Prefab: {fileID: 6753689305302885030, guid: 16409877455613548b1d4143fee15f40, type: 3}
   ingredientName: Cheese
   ingredientSprite: {fileID: 21300000, guid: 93edd8362ad7e3140b62ce716e26f74f, type: 3}
   description: A creamy and flavorful delight, ideal for enhancing any dish.
