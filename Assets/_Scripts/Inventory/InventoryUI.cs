@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 
 public class InventoryUI : MonoBehaviour
 {
@@ -52,12 +53,27 @@ public class InventoryUI : MonoBehaviour
         if (inventoryGrid.childCount >= maxInventorySize)
         {
             Debug.LogWarning("Inventaire plein ! Impossible d'ajouter un nouvel objet.");
+            RemoveItemFromSlotMapping(item);
+            ErrorManager.Instance.ShowErrorMessage("Inventaire plein !");
+
+            if (itemSlotMapping.ContainsKey(item))
+            {
+                itemSlotMapping.Remove(item);
+            }
+
             return;
         }
 
         if (itemSlotMapping.ContainsKey(item))
         {
+            itemSlotMapping.Remove(item);
             Debug.LogWarning($"{item.name} est déjà dans l'inventaire (via le slot mapping) !");
+            RemoveItemFromSlotMapping(item);
+            if (itemSlotMapping.ContainsKey(item))
+            {
+                itemSlotMapping.Remove(item);
+            }
+
             return;
         }
 
@@ -245,6 +261,14 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
+    public void RemoveItemFromSlotMapping(GameObject item)
+    {
+        if (itemSlotMapping.ContainsKey(item))
+        {
+            itemSlotMapping.Remove(item);
+            Debug.Log($"{item.name} retiré des slots de l'inventaire.");
+        }
+    }
 
     public bool IsPointerOverInventoryArea()
     {

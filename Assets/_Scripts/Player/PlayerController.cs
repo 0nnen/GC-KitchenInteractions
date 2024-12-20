@@ -49,12 +49,20 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (!isMovementEnabled) return; // Désactiver les mouvements si l'état est faux
         isGrounded = CheckGrounded();
         HandleMovement();
         ApplyGravity();
         // RotatePlayerWithMouse();
         UpdateAnimator();
         ApplyDynamicTilt();
+    }
+
+    private bool isMovementEnabled = true; // Contrôle si les mouvements sont activés
+
+    public void SetMovementEnabled(bool enabled)
+    {
+        isMovementEnabled = enabled;
     }
 
     /// <summary>
